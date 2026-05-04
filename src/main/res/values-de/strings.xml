@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Welcome screen -->
+    <string name="bt_welcome_title">Home&#x202F;Assistant\nBluetooth</string>
+    <string name="bt_welcome_details">Steuere dein Home&#x202F;Assistant direkt vom Android-Gerät über Bluetooth — kein Internet nötig.\n\nHome&#x202F;Assistant ist Open-Source-Heimautomatisierung mit Fokus auf lokaler Steuerung und Privatsphäre.</string>
+    <string name="bt_welcome_connect">Über Bluetooth verbinden</string>
+
+    <!-- Setup / Discovery screen -->
+    <string name="bt_setup_title">Home Assistant Bluetooth-App</string>
+    <string name="bt_setup_searching">Suche Home Assistant\nBluetooth-Geräte</string>
+    <string name="bt_setup_no_server_info">Kein Gateway in der Nähe gefunden. Stelle sicher, dass dein ESP32-Gateway eingeschaltet und in Reichweite ist.</string>
+    <string name="bt_setup_address_manual">Adresse manuell eingeben</string>
+    <string name="bt_setup_permission_required">Bluetooth-Berechtigung benötigt</string>
+    <string name="bt_setup_scanning">Suche nach Instanzen…</string>
+    <string name="bt_setup_scan_stop">Suche stoppen</string>
+    <string name="bt_setup_scan_start">Erneut suchen</string>
+    <string name="bt_setup_transport_ble">Bluetooth LE</string>
+
+    <!-- Connect bottom sheet -->
+    <string name="bt_setup_connect">Verbinden</string>
+    <string name="bt_setup_continue">Weiter</string>
+    <string name="bt_setup_address_label">Bluetooth-Adresse</string>
+    <string name="bt_setup_address_placeholder">28:37:2F:8D:4A:25</string>
+    <string name="bt_setup_address_hide">Erweitert ausblenden</string>
+
+    <!-- Passcode step -->
+    <string name="bt_setup_passcode_title">Passcode eingeben</string>
+    <string name="bt_setup_passcode_hint">Scanne den QR-Code aus der Home-Assistant-Benachrichtigung oder gib den Passcode manuell ein.</string>
+    <string name="bt_setup_scan_qr">QR-Code scannen</string>
+    <string name="bt_setup_scan_prompt">Scanne den QR-Code aus Home Assistant</string>
+    <string name="bt_setup_or_manual">oder manuell eingeben</string>
+    <string name="bt_setup_passcode_label">Passcode</string>
+    <string name="bt_setup_submit_passcode">Verbinden</string>
+
+    <!-- Syncing step -->
+    <string name="bt_setup_syncing">Synchronisiere Daten…</string>
+
+    <!-- Settings screen -->
+    <string name="bt_settings_section_devices">Geräte</string>
+    <string name="bt_settings_add_device">Gerät hinzufügen</string>
+    <string name="bt_settings_section_device">Aktives Gerät</string>
+    <string name="bt_settings_device_address">Geräte-Adresse</string>
+    <string name="bt_settings_passcode">Passcode</string>
+    <string name="bt_settings_last_sync">Zuletzt synchronisiert</string>
+    <string name="bt_settings_section_sync">Daten</string>
+    <string name="bt_settings_resync">Jetzt synchronisieren</string>
+    <string name="bt_settings_section_reset">Gefahrenzone</string>
+    <string name="bt_settings_reset_hint">Entfernt das aktive Gerät und löscht dessen lokale Daten. Andere Geräte bleiben unverändert.</string>
+    <string name="bt_settings_reset">Aktives Gerät entfernen</string>
+    <string name="bt_settings_section_types">HA-Typ-Info</string>
+    <string name="bt_settings_types_loading">Lade von GitHub…</string>
+    <string name="bt_settings_fetch_types">Von GitHub laden</string>
+
+    <!-- Dashboard screen -->
+    <string name="bt_dashboard_title">Home Assistant</string>
+    <string name="bt_dashboard_subtitle">Bluetooth</string>
+    <string name="bt_dashboard_error_hint">Auf ↻ tippen für erneuten Versuch.</string>
+    <string name="bt_dashboard_no_entities">Keine Entitäten gefunden.</string>
+    <string name="bt_dashboard_domain_all">Alle</string>
+    <string name="bt_dashboard_connecting">Verbinde über Bluetooth…</string>
+
+    <string name="bt_attempting_authentication">Authentifiziere…</string>
+    <string name="bt_grant_permission">Berechtigung erteilen</string>
+    <string name="bt_show">Anzeigen</string>
+    <string name="bt_connect">Verbinden</string>
+    <string name="bt_failed_connection">Verbindung fehlgeschlagen</string>
+    <string name="bt_brightness">Helligkeit: %1$d%%</string>
+    <string name="bt_fan_speed">Geschwindigkeit: %1$d%%</string>
+    <string name="bt_search">Suche</string>
+    <string name="bt_refresh">Aktualisieren</string>
+    <string name="bt_settings">Einstellungen</string>
+    <string name="bt_clear_search">Suche löschen</string>
+
+    <!-- Dashboard section headers (per HA entity domain) -->
+    <string name="bt_section_areas">Bereiche</string>
+    <string name="bt_section_light">Lichter</string>
+    <string name="bt_section_switch">Schalter</string>
+    <string name="bt_section_sensor">Sensoren</string>
+    <string name="bt_section_climate">Klima</string>
+    <string name="bt_section_cover">Rollläden</string>
+    <string name="bt_section_media_player">Medien</string>
+    <string name="bt_section_lock">Schlösser</string>
+    <string name="bt_section_fan">Ventilatoren</string>
+    <string name="bt_section_automation">Automatisierungen</string>
+    <string name="bt_section_script">Skripte</string>
+    <string name="bt_section_button">Knöpfe</string>
+    <string name="bt_section_humidifier">Luftfeuchtigkeit</string>
+    <string name="bt_section_update">Updates</string>
+    <string name="bt_section_other">Sonstiges</string>
+</resources>
