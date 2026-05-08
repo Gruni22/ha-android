@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- App identity -->
+    <string name="app_name">btdashboard – HA over Bluetooth</string>
+
     <!-- Welcome screen -->
     <string name="bt_welcome_title">Home&#x202F;Assistant\nBluetooth</string>
     <string name="bt_welcome_details">Control your Home&#x202F;Assistant directly from your Android device via Bluetooth — no internet required.\n\nHome&#x202F;Assistant is open source home automation that puts local control and privacy first.</string>

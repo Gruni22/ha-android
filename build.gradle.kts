@@ -12,7 +12,7 @@ android {
     compileSdk = libs.versions.androidSdk.compile.get().toInt()
 
     defaultConfig {
-        applicationId = "io.homeassistant.btdashboard"
+        applicationId = "io.github.gruni22.btdashboard"
         minSdk = 26
         targetSdk = libs.versions.androidSdk.target.get().toInt()
         versionCode = 1
