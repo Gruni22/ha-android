@@ -18,6 +18,7 @@ import androidx.car.app.model.Toggle
 import io.homeassistant.btdashboard.dashboard.BluetoothDashboardClient
 import io.homeassistant.btdashboard.dashboard.HaDashboardInfo
 import io.homeassistant.btdashboard.dashboard.HaEntityState
+import io.homeassistant.btdashboard.dashboard.toggleAction
 import io.homeassistant.btdashboard.service.BleConnectionService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -191,15 +192,24 @@ class BtCarEntityScreen(carContext: CarContext) : Screen(carContext) {
                     screenManager.push(BtCarLightDetailScreen(carContext, svc, entity.entityId))
                 }
             } else {
-                row.setToggle(Toggle.Builder { checked ->
-                    scope.launch {
-                        val svc = service ?: return@launch
-                        runCatching {
-                            val s = if (checked) "turn_on" else "turn_off"
-                            svc.callService(entity.domain, s, entity.entityId)
-                        }.onFailure { Timber.e(it, "BtCar: toggle failed") }
-                    }
-                }.setChecked(isOn).build())
+                // Use the shared toggleAction() helper so AA matches the phone
+                // dashboard exactly (cover open/close, scene one-shot, vacuum
+                // start/pause, …). Pass entity.sourceDeviceId so multi-instance
+                // routing sends the call to the right gateway.
+                val action = entity.toggleAction()
+                if (action != null) {
+                    row.setToggle(Toggle.Builder { _ ->
+                        scope.launch {
+                            val svc = service ?: return@launch
+                            runCatching {
+                                svc.callService(
+                                    action.first, action.second, entity.entityId,
+                                    sourceDeviceId = entity.sourceDeviceId,
+                                )
+                            }.onFailure { Timber.e(it, "BtCar: toggle ${entity.entityId} failed") }
+                        }
+                    }.setChecked(isOn).build())
+                }
             }
             itemList.addItem(row.build())
         }
@@ -256,24 +266,61 @@ class BtCarEntityScreen(carContext: CarContext) : Screen(carContext) {
         "light" -> if (e.isActive) {
             if (e.supportsBrightness) "An · ${e.brightnessPercent}%" else "An"
         } else "Aus"
-        "switch", "input_boolean", "automation", "fan" -> if (e.isActive) "An" else "Aus"
+        "switch", "input_boolean", "automation", "fan", "humidifier", "script"
+            -> if (e.isActive) "An" else "Aus"
         "lock" -> if (e.isActive) "Entriegelt" else "Verriegelt"
         "cover" -> if (e.isActive) "Offen" else "Geschlossen"
         "binary_sensor" -> if (e.isActive) "Erkannt" else "Klar"
+        "climate" -> {
+            val cur = e.currentTemperature
+            val tgt = e.targetTemperature
+            buildString {
+                if (cur != null) append("${"%.1f".format(cur)}°")
+                if (tgt != null) {
+                    if (isNotEmpty()) append(" → ")
+                    append("${"%.1f".format(tgt)}°")
+                }
+                if (isEmpty()) append(e.state)
+            }
+        }
+        "vacuum" -> when (e.state) {
+            "cleaning"  -> "Saugt"
+            "returning" -> "Fährt zur Station"
+            "paused"    -> "Pausiert"
+            "docked"    -> "An Station"
+            "idle"      -> "Bereit"
+            "error"     -> "Fehler"
+            else        -> e.state
+        }
+        "scene" -> "Szene"
+        "media_player" -> when (e.state) {
+            "playing" -> e.attributes["media_title"]?.toString() ?: "Spielt"
+            "paused"  -> "Pausiert"
+            "idle"    -> "Bereit"
+            "off"     -> "Aus"
+            else      -> e.state
+        }
         else -> if (e.unit != null) "${e.state} ${e.unit}" else e.state
     }
 
     companion object {
         private const val MAX_SENSOR_ROWS = 6
+        // Domains that AA's row-toggle can sensibly drive (binary on/off semantic).
+        // Excludes number/select/humidifier-target/cover-position — those need
+        // sliders/dropdowns AA can't render in a ListTemplate row.
         private val SUPPORTED_DOMAINS = setOf(
             "light", "switch", "input_boolean", "cover",
             "lock", "fan", "climate", "media_player",
-            "automation", "sensor", "binary_sensor",
+            "automation", "script", "scene", "vacuum",
+            "humidifier",
+            "sensor", "binary_sensor",
         )
         private val DOMAIN_ORDER = listOf(
-            "light", "switch", "input_boolean", "cover",
-            "lock", "fan", "climate", "media_player",
-            "automation", "sensor", "binary_sensor",
+            "light", "switch", "input_boolean",
+            "climate", "fan", "humidifier",
+            "cover", "lock", "media_player",
+            "vacuum", "scene", "script", "automation",
+            "sensor", "binary_sensor",
         )
     }
 }

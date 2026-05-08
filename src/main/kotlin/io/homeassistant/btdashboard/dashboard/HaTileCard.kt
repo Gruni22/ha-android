@@ -15,30 +15,49 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Air
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Blinds
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.DeviceThermostat
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Numbers
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PowerSettingsNew
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material.icons.filled.Water
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -68,6 +87,20 @@ fun HaTileCard(
     onToggle: () -> Unit,
     onBrightness: (Int) -> Unit = {},
     onFanSpeed: (Int) -> Unit = {},
+    onClimateTemp: (Double) -> Unit = {},
+    onClimateMode: (String) -> Unit = {},
+    onCoverPosition: (Int) -> Unit = {},
+    onVacuumAction: (String) -> Unit = {},
+    onNumber: (Double) -> Unit = {},
+    onSelect: (String) -> Unit = {},
+    onHumidity: (Int) -> Unit = {},
+    /**
+     * Friendly name of the gateway this entity came in through. Only set when
+     * the user has >1 device configured — otherwise the label is noise. Shown
+     * as a small "via …" caption below the entity name so identical
+     * `entity_id`s from different gateways stay distinguishable.
+     */
+    gatewayLabel: String? = null,
     modifier: Modifier = Modifier,
 ) {
     val accent = haDomainColor(entity.domain)
@@ -81,7 +114,7 @@ fun HaTileCard(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .let { if (entity.isControllable) it.clickable(onClick = onToggle) else it },
+            .let { if (entity.isTapToggleable) it.clickable(onClick = onToggle) else it },
         shape = RoundedCornerShape(20.dp),
         color = bg,
         contentColor = onBg,
@@ -120,6 +153,15 @@ fun HaTileCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
+                    if (gatewayLabel != null) {
+                        Text(
+                            text = "$gatewayLabel",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = onBg.copy(alpha = 0.5f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
             }
 
@@ -169,9 +211,321 @@ fun HaTileCard(
                     ),
                 )
             }
+
+            // Climate: −/+ stepper for the setpoint, plus HVAC-mode chips.
+            // Mirrors HA's tile-card "target-temperature" + "climate-hvac-modes"
+            // features: big target-temp readout in the middle, large round
+            // buttons either side, mode chips below.
+            if (entity.domain == "climate" && entity.targetTemperature != null && isOn) {
+                Spacer(Modifier.height(8.dp))
+                ClimateStepper(
+                    target = entity.targetTemperature!!,
+                    minTemp = entity.minTemp,
+                    maxTemp = entity.maxTemp,
+                    step = entity.tempStep,
+                    accent = accent,
+                    onChange = onClimateTemp,
+                )
+            }
+            if (entity.domain == "climate" && entity.hvacModes.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                HvacModeRow(
+                    modes = entity.hvacModes,
+                    active = entity.state,
+                    accent = accent,
+                    onSelect = onClimateMode,
+                )
+            }
+
+            // Cover position slider (only when cover supports SET_POSITION).
+            // HA tile uses ▲ / ▼ steppers + percent label.
+            if (entity.domain == "cover" && entity.supportsCoverPosition) {
+                var local by remember(entity.entityId, entity.coverPosition ?: 0) {
+                    mutableFloatStateOf((entity.coverPosition ?: 0).toFloat())
+                }
+                Spacer(Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "${local.toInt()} %",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = accent,
+                        modifier = Modifier.width(56.dp),
+                    )
+                    Slider(
+                        value = local,
+                        onValueChange = { local = it },
+                        onValueChangeFinished = { onCoverPosition(local.toInt()) },
+                        valueRange = 0f..100f,
+                        modifier = Modifier.weight(1f).height(28.dp),
+                        colors = sliderColors(accent),
+                    )
+                }
+            }
+
+            // Vacuum: action buttons
+            if (entity.domain == "vacuum") {
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    val cleaning = entity.vacuumIsCleaning
+                    VacuumButton(
+                        icon = if (cleaning) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                        label = if (cleaning) "Pause" else "Start",
+                        accent = accent,
+                        onClick = { onVacuumAction(if (cleaning) "pause" else "start") },
+                        modifier = Modifier.weight(1f),
+                    )
+                    VacuumButton(
+                        icon = Icons.Filled.Home,
+                        label = "Dock",
+                        accent = accent,
+                        onClick = { onVacuumAction("return_to_base") },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+
+            // input_number / number — slider with current value label
+            if (entity.domain == "input_number" || entity.domain == "number") {
+                val v = entity.numberValue
+                if (v != null) {
+                    var local by remember(entity.entityId, v) { mutableFloatStateOf(v.toFloat()) }
+                    val steps = ((entity.numberMax - entity.numberMin) / entity.numberStep).toInt() - 1
+                    Spacer(Modifier.height(6.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            buildString {
+                                append(if (entity.numberStep < 1.0) "%.1f".format(local) else "${local.toInt()}")
+                                entity.unit?.let { append(" $it") }
+                            },
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = accent,
+                            modifier = Modifier.width(64.dp),
+                        )
+                        Slider(
+                            value = local,
+                            onValueChange = { local = it },
+                            onValueChangeFinished = {
+                                onNumber(if (entity.numberStep < 1.0) local.toDouble() else local.toInt().toDouble())
+                            },
+                            valueRange = entity.numberMin.toFloat()..entity.numberMax.toFloat(),
+                            steps = steps.coerceIn(0, 99),
+                            modifier = Modifier.weight(1f).height(28.dp),
+                            colors = sliderColors(accent),
+                        )
+                    }
+                }
+            }
+
+            // input_select / select — dropdown (current value as a chip)
+            if (entity.domain == "input_select" || entity.domain == "select") {
+                val options = entity.selectOptions
+                if (options.isNotEmpty()) {
+                    var expanded by remember { mutableStateOf(false) }
+                    Spacer(Modifier.height(6.dp))
+                    Box {
+                        AssistChip(
+                            onClick = { expanded = true },
+                            label = { Text(entity.state, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            colors = AssistChipDefaults.assistChipColors(
+                                containerColor = accent.copy(alpha = 0.18f),
+                                labelColor = accent,
+                            ),
+                        )
+                        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                            options.forEach { opt ->
+                                DropdownMenuItem(
+                                    text = { Text(opt) },
+                                    onClick = {
+                                        expanded = false
+                                        if (opt != entity.state) onSelect(opt)
+                                    },
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Humidifier — when on, show target-humidity slider
+            if (entity.domain == "humidifier" && isOn && entity.targetHumidity != null) {
+                var local by remember(entity.entityId, entity.targetHumidity) {
+                    mutableFloatStateOf(entity.targetHumidity!!.toFloat())
+                }
+                Spacer(Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "${local.toInt()} %",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = accent,
+                        modifier = Modifier.width(56.dp),
+                    )
+                    Slider(
+                        value = local,
+                        onValueChange = { local = it },
+                        onValueChangeFinished = { onHumidity(local.toInt()) },
+                        valueRange = entity.minHumidity.toFloat()..entity.maxHumidity.toFloat(),
+                        modifier = Modifier.weight(1f).height(28.dp),
+                        colors = sliderColors(accent),
+                    )
+                }
+            }
         }
     }
 }
+
+/**
+ * HA-style climate target-temperature stepper.
+ *
+ *   [ − ]    21.5°    [ + ]
+ *
+ * Local target tracks user taps optimistically and is replayed to HA on
+ * each tap. Steps stay clamped to [minTemp, maxTemp].
+ */
+@Composable
+private fun ClimateStepper(
+    target: Double,
+    minTemp: Double,
+    maxTemp: Double,
+    step: Double,
+    accent: Color,
+    onChange: (Double) -> Unit,
+) {
+    var local by remember(target) { mutableFloatStateOf(target.toFloat()) }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        StepperButton(
+            icon = Icons.Filled.Remove,
+            accent = accent,
+            enabled = local > minTemp,
+            onClick = {
+                val next = (local - step.toFloat()).coerceAtLeast(minTemp.toFloat())
+                if (next != local) {
+                    local = next
+                    onChange(local.toDouble())
+                }
+            },
+        )
+        Text(
+            text = "${"%.1f".format(local)}°",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = accent,
+        )
+        StepperButton(
+            icon = Icons.Filled.Add,
+            accent = accent,
+            enabled = local < maxTemp,
+            onClick = {
+                val next = (local + step.toFloat()).coerceAtMost(maxTemp.toFloat())
+                if (next != local) {
+                    local = next
+                    onChange(local.toDouble())
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun StepperButton(
+    icon: ImageVector,
+    accent: Color,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier
+            .size(40.dp)
+            .clickable(enabled = enabled, onClick = onClick),
+        shape = CircleShape,
+        color = if (enabled) accent.copy(alpha = 0.18f) else accent.copy(alpha = 0.08f),
+        contentColor = if (enabled) accent else accent.copy(alpha = 0.4f),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(icon, null, modifier = Modifier.size(22.dp))
+        }
+    }
+}
+
+@Composable
+private fun HvacModeRow(
+    modes: List<String>,
+    active: String,
+    accent: Color,
+    onSelect: (String) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        modes.forEach { mode ->
+            FilterChip(
+                selected = mode == active,
+                onClick = { if (mode != active) onSelect(mode) },
+                label = { Text(hvacModeLabel(mode)) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = accent,
+                    selectedLabelColor = Color.White,
+                ),
+            )
+        }
+    }
+}
+
+@Composable
+private fun VacuumButton(
+    icon: ImageVector,
+    label: String,
+    accent: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        color = accent.copy(alpha = 0.18f),
+        contentColor = accent,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            Icon(icon, null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(4.dp))
+            Text(label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+private fun hvacModeLabel(mode: String): String = when (mode) {
+    "off" -> "Aus"
+    "heat" -> "Heizen"
+    "cool" -> "Kühlen"
+    "heat_cool", "auto" -> "Auto"
+    "dry" -> "Trocken"
+    "fan_only" -> "Lüfter"
+    else -> mode
+}
+
+@Composable
+private fun sliderColors(accent: Color) = SliderDefaults.colors(
+    thumbColor = accent,
+    activeTrackColor = accent,
+    inactiveTrackColor = accent.copy(alpha = 0.25f),
+)
 
 // ── State formatting helpers (mirror HA's frontend pattern) ───────────────────
 
@@ -219,10 +573,29 @@ private fun formatState(entity: HaEntityState): String {
             "off" -> "Aus"
             else -> state
         }
-        "sensor" -> {
+        "sensor", "input_number", "number" -> {
             val unit = entity.unit
             if (unit != null) "$state $unit" else state
         }
+        "vacuum" -> when (state) {
+            "cleaning"  -> "Saugt"
+            "returning" -> "Fährt zur Station"
+            "paused"    -> "Pausiert"
+            "docked"    -> "An Station"
+            "idle"      -> "Bereit"
+            "error"     -> "Fehler"
+            else        -> state
+        }
+        "humidifier" -> {
+            val target = entity.targetHumidity
+            when {
+                state == "off"            -> "Aus"
+                target != null            -> "An · $target %"
+                else                      -> "An"
+            }
+        }
+        "scene"   -> "Szene"
+        "select", "input_select" -> state  // current option name
         else -> state
     }
 }
@@ -241,6 +614,12 @@ internal fun haDomainColor(domain: String): Color = when (domain) {
     "automation"     -> Color(0xFFFFA726)  // orange
     "script"         -> Color(0xFF9C27B0)  // purple
     "humidifier"     -> Color(0xFF5C6BC0)  // indigo
+    "vacuum"         -> Color(0xFF7E57C2)  // deep purple
+    "scene"          -> Color(0xFFEC407A)  // pink
+    "input_number",
+    "number"         -> Color(0xFF66BB6A)  // green
+    "input_select",
+    "select"         -> Color(0xFF26A69A)  // teal
     "sensor",
     "binary_sensor"  -> Color(0xFF78909C)  // blue grey
     else             -> Color(0xFF009AC7)  // HA primary
@@ -259,7 +638,13 @@ internal fun haDomainIcon(domain: String): ImageVector = when (domain) {
     "fan"            -> Icons.Filled.Air
     "automation"     -> Icons.Filled.Bolt
     "script"         -> Icons.Filled.Code
-    "humidifier"     -> Icons.Filled.Water
+    "humidifier"     -> Icons.Filled.WaterDrop
+    "vacuum"         -> Icons.Filled.CleaningServices
+    "scene"          -> Icons.Filled.AutoAwesome
+    "input_number",
+    "number"         -> Icons.Filled.Numbers
+    "input_select",
+    "select"         -> Icons.Filled.List
     "sun"            -> Icons.Filled.WbSunny
     else             -> Icons.Filled.Home
 }

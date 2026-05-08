@@ -104,7 +104,7 @@ class BtCarLightDetailScreen(
             runCatching {
                 service.callService(
                     "light", "turn_on", e.entityId,
-                    mapOf("brightness_pct" to target),
+                    mapOf("brightness_pct" to target), e.sourceDeviceId,
                 )
             }.onFailure { Timber.e(it, "BtCar: brightness adjust failed") }
         }
@@ -113,8 +113,9 @@ class BtCarLightDetailScreen(
     private fun toggle(e: HaEntityState) {
         val s = if (e.isActive) "turn_off" else "turn_on"
         scope.launch {
-            runCatching { service.callService(e.domain, s, e.entityId) }
-                .onFailure { Timber.e(it, "BtCar: toggle failed") }
+            runCatching {
+                service.callService(e.domain, s, e.entityId, sourceDeviceId = e.sourceDeviceId)
+            }.onFailure { Timber.e(it, "BtCar: toggle failed") }
         }
     }
 }

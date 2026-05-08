@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.homeassistant.btdashboard.config.BtConfig
 import io.homeassistant.btdashboard.dashboard.HaView
 import io.homeassistant.btdashboard.service.BleConnectionService
 import javax.inject.Inject
@@ -50,8 +51,23 @@ class BluetoothDashboardViewModel @Inject constructor(
         svc?.entities ?: flowOf(emptyList())
     }
 
+    private val entityAreaMap = _service.flatMapLatest { svc ->
+        svc?.entityAreaMap ?: flowOf(emptyMap())
+    }
+
     val areas: StateFlow<List<HaArea>> = _service.flatMapLatest { svc ->
         svc?.areas ?: flowOf(emptyList())
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** Areas with at least one exposed entity. The bottom-of-dashboard area
+     *  grid renders this list — areas without any visible device just clutter
+     *  the UI and lead to dead-end taps (you'd select an empty area, the
+     *  entity list would clear, and there'd be nowhere to tap to undo it). */
+    val populatedAreas: StateFlow<List<HaArea>> = combine(
+        areas, remoteEntities, entityAreaMap,
+    ) { allAreas, entities, areaMap ->
+        val populated = entities.mapNotNullTo(HashSet(allAreas.size)) { areaMap[it.entityId] }
+        allAreas.filter { it.id in populated }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val dashboards: StateFlow<List<HaDashboardInfo>> = _service.flatMapLatest { svc ->
@@ -70,9 +86,16 @@ class BluetoothDashboardViewModel @Inject constructor(
         svc?.activeViewIndex ?: flowOf(0)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
-    private val entityAreaMap = _service.flatMapLatest { svc ->
-        svc?.entityAreaMap ?: flowOf(emptyMap())
-    }
+    /**
+     * Map `deviceId → friendly device name` so tiles can show a gateway badge
+     * when the user has more than one device configured. Built from
+     * [BtConfig.devices] which is the source of truth — the service doesn't
+     * expose it because device names live in user prefs, not in the BLE
+     * link.
+     */
+    val gatewayLabels: StateFlow<Map<String, String>> = MutableStateFlow(
+        BtConfig(context).devices.associate { it.id to it.name }
+    )
 
     private val _searchQuery = MutableStateFlow("")
     private val _domainFilter = MutableStateFlow<String?>(null)
@@ -120,43 +143,126 @@ class BluetoothDashboardViewModel @Inject constructor(
 
     fun toggle(entity: HaEntityState) {
         val svc = _service.value ?: return
-        val isOn = entity.isActive
-        val (svcDomain, service) = when (entity.domain) {
-            // Cover: open/opening → close; closing → open (reverse); closed/stopped → open
-            "cover" -> "cover" to when (entity.state) {
-                "open", "opening" -> "close_cover"
-                "closing"         -> "open_cover"
-                else              -> "open_cover"  // closed, stopped
-            }
-            // Lock: unlocked/unlocking/opening → lock; locked/locking → unlock
-            "lock"         -> "lock"         to if (isOn) "lock" else "unlock"
-            "media_player" -> "media_player" to if (isOn) "media_pause" else "media_play"
-            "script"       -> "script"       to "turn_on"
-            else           -> entity.domain  to if (isOn) "turn_off" else "turn_on"
-        }
+        val (svcDomain, service) = entity.toggleAction() ?: return  // no-op for domains without binary toggle
         viewModelScope.launch {
-            runCatching { svc.callService(svcDomain, service, entity.entityId) }
+            runCatching { svc.callService(svcDomain, service, entity.entityId, sourceDeviceId = entity.sourceDeviceId) }
                 .onFailure { Timber.e(it, "BtDashboard: toggle ${entity.entityId} failed") }
         }
     }
 
-    // brightnessPercent: 0-100 (matches HA brightness_pct service param)
-    fun setBrightness(entityId: String, brightnessPercent: Int) {
+    // ── Domain-specific setters ─────────────────────────────────────────────────
+    //
+    // All setters take the full `HaEntityState` so we can route to the right
+    // gateway via `entity.sourceDeviceId`. Using just `entityId` would lose
+    // that and break the multi-instance compound-key routing.
+
+    /** Set climate setpoint (single-target). */
+    fun setClimateTemperature(entity: HaEntityState, temperature: Double) {
         val svc = _service.value ?: return
         viewModelScope.launch {
             runCatching {
-                svc.callService("light", "turn_on", entityId, mapOf("brightness_pct" to brightnessPercent))
-            }.onFailure { Timber.e(it, "BtDashboard: setBrightness $entityId failed") }
+                svc.callService(
+                    "climate", "set_temperature", entity.entityId,
+                    mapOf("temperature" to temperature), entity.sourceDeviceId,
+                )
+            }.onFailure { Timber.e(it, "BtDashboard: setClimateTemperature ${entity.entityId} failed") }
         }
     }
 
-    // percentage: 0-100 (matches HA fan.set_percentage service param)
-    fun setFanSpeed(entityId: String, percentage: Int) {
+    fun setClimateHvacMode(entity: HaEntityState, hvacMode: String) {
         val svc = _service.value ?: return
         viewModelScope.launch {
             runCatching {
-                svc.callService("fan", "set_percentage", entityId, mapOf("percentage" to percentage))
-            }.onFailure { Timber.e(it, "BtDashboard: setFanSpeed $entityId failed") }
+                svc.callService(
+                    "climate", "set_hvac_mode", entity.entityId,
+                    mapOf("hvac_mode" to hvacMode), entity.sourceDeviceId,
+                )
+            }.onFailure { Timber.e(it, "BtDashboard: setClimateHvacMode ${entity.entityId} failed") }
+        }
+    }
+
+    fun setBrightness(entity: HaEntityState, brightnessPercent: Int) {
+        val svc = _service.value ?: return
+        viewModelScope.launch {
+            runCatching {
+                svc.callService(
+                    "light", "turn_on", entity.entityId,
+                    mapOf("brightness_pct" to brightnessPercent), entity.sourceDeviceId,
+                )
+            }.onFailure { Timber.e(it, "BtDashboard: setBrightness ${entity.entityId} failed") }
+        }
+    }
+
+    fun setFanSpeed(entity: HaEntityState, percentage: Int) {
+        val svc = _service.value ?: return
+        viewModelScope.launch {
+            runCatching {
+                svc.callService(
+                    "fan", "set_percentage", entity.entityId,
+                    mapOf("percentage" to percentage), entity.sourceDeviceId,
+                )
+            }.onFailure { Timber.e(it, "BtDashboard: setFanSpeed ${entity.entityId} failed") }
+        }
+    }
+
+    /** position 0..100 — closed to fully open (HA cover convention). */
+    fun setCoverPosition(entity: HaEntityState, position: Int) {
+        val svc = _service.value ?: return
+        viewModelScope.launch {
+            runCatching {
+                svc.callService(
+                    "cover", "set_cover_position", entity.entityId,
+                    mapOf("position" to position), entity.sourceDeviceId,
+                )
+            }.onFailure { Timber.e(it, "BtDashboard: setCoverPosition ${entity.entityId} failed") }
+        }
+    }
+
+    /** action: "start" | "pause" | "stop" | "return_to_base" | "locate". */
+    fun vacuumAction(entity: HaEntityState, action: String) {
+        val svc = _service.value ?: return
+        viewModelScope.launch {
+            runCatching {
+                svc.callService("vacuum", action, entity.entityId, sourceDeviceId = entity.sourceDeviceId)
+            }.onFailure { Timber.e(it, "BtDashboard: vacuumAction ${entity.entityId}/$action failed") }
+        }
+    }
+
+    fun setNumberValue(entity: HaEntityState, value: Double) {
+        val svc = _service.value ?: return
+        val domain = entity.entityId.substringBefore(".")  // "input_number" or "number"
+        viewModelScope.launch {
+            runCatching {
+                svc.callService(
+                    domain, "set_value", entity.entityId,
+                    mapOf("value" to value), entity.sourceDeviceId,
+                )
+            }.onFailure { Timber.e(it, "BtDashboard: setNumberValue ${entity.entityId} failed") }
+        }
+    }
+
+    fun selectOption(entity: HaEntityState, option: String) {
+        val svc = _service.value ?: return
+        val domain = entity.entityId.substringBefore(".")
+        viewModelScope.launch {
+            runCatching {
+                svc.callService(
+                    domain, "select_option", entity.entityId,
+                    mapOf("option" to option), entity.sourceDeviceId,
+                )
+            }.onFailure { Timber.e(it, "BtDashboard: selectOption ${entity.entityId} failed") }
+        }
+    }
+
+    fun setHumidity(entity: HaEntityState, humidity: Int) {
+        val svc = _service.value ?: return
+        viewModelScope.launch {
+            runCatching {
+                svc.callService(
+                    "humidifier", "set_humidity", entity.entityId,
+                    mapOf("humidity" to humidity), entity.sourceDeviceId,
+                )
+            }.onFailure { Timber.e(it, "BtDashboard: setHumidity ${entity.entityId} failed") }
         }
     }
 

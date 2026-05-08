@@ -81,12 +81,18 @@ class SettingsViewModel @Inject constructor(
         haTypesStatus = if (typesFetcher.hasCachedData()) "Geladen" else "",
     )
 
+    /**
+     * No-op kept for source compatibility — multi-instance mode runs every
+     * configured device in parallel, so switching is meaningless. Calling it
+     * just nudges the service to reconcile its sessions with `BtConfig.devices`
+     * (e.g. picks up a freshly-added device that wasn't connected yet).
+     */
     fun switchDevice(id: String) {
-        btConfig.setActive(id)
-        _uiState.update { it.copy(activeDeviceId = id) }
+        service?.applyActiveDeviceChange()
     }
 
     fun removeDevice(id: String) {
+        val wasActive = btConfig.activeDeviceId == id
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
                 val db = AppDatabase.getInstance(context)
@@ -101,23 +107,37 @@ class SettingsViewModel @Inject constructor(
                 _uiState.update { it.copy(navigateToSetup = true) }
             } else {
                 _uiState.update { it.copy(devices = remaining, activeDeviceId = btConfig.activeDeviceId) }
+                // If we just removed the device the service was using, the
+                // active fell through to the next entry — kick the service so
+                // it reconnects to that one instead of dangling on the dead BLE
+                // address.
+                if (wasActive) service?.applyActiveDeviceChange()
             }
         }
     }
 
-    fun resync() {
-        val device = btConfig.activeDevice ?: return
+    /**
+     * Resync. With no [deviceId] passed, resyncs every configured gateway in
+     * parallel; with a [deviceId] only that one. Both routes go through
+     * [BleConnectionService.forceResync] which handles the disconnect/sync
+     * dance per session.
+     */
+    fun resync(deviceId: String? = null) {
         val svc = service ?: run {
             _uiState.update { it.copy(error = "Service nicht verbunden — App neu öffnen") }
             return
         }
+        val targets = if (deviceId != null) listOfNotNull(btConfig.devices.find { it.id == deviceId })
+                      else btConfig.devices
+        if (targets.isEmpty()) return
         _uiState.update { it.copy(syncing = true, syncStatus = "Synchronisiere…", error = null) }
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                when (val result = svc.forceResync()) {
+                when (val result = svc.forceResync(deviceId)) {
                     is SyncResult.Success -> {
-                        val updated = device.copy(lastSyncTime = System.currentTimeMillis())
-                        btConfig.updateDevice(updated)
+                        // Update lastSyncTime for every device that was synced.
+                        val now = System.currentTimeMillis()
+                        targets.forEach { btConfig.updateDevice(it.copy(lastSyncTime = now)) }
                         _uiState.update {
                             it.copy(
                                 syncing = false,

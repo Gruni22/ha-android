@@ -174,7 +174,8 @@ fun BluetoothDashboardScreen(
     val entities              by viewModel.filteredEntities.collectAsState()
     val searchQuery           by viewModel.searchQuery.collectAsState()
     val domainFilter          by viewModel.domainFilter.collectAsState()
-    val areas                 by viewModel.areas.collectAsState()
+    val areas                 by viewModel.populatedAreas.collectAsState()
+    val gatewayLabels         by viewModel.gatewayLabels.collectAsState()
     val areaFilter            by viewModel.areaFilter.collectAsState()
     val dashboards            by viewModel.dashboards.collectAsState()
     val activeDashboardIndex  by viewModel.activeDashboardIndex.collectAsState()
@@ -275,15 +276,30 @@ fun BluetoothDashboardScreen(
                     BluetoothDashboardClient.State.DISCONNECTED,
                 )
                 when {
-                    entities.isNotEmpty() -> {
+                    // Render the body whenever there's *anything* to show — entities
+                    // OR areas. Without the `areas` half, selecting an area filter
+                    // that yields zero entities (or any other filter combo that does
+                    // the same) hides the whole body, including the area grid that's
+                    // the only way to deselect — leaving the user stranded.
+                    entities.isNotEmpty() || areas.isNotEmpty() -> {
                         DashboardBody(
                             entities = entities,
                             areas = areas,
                             selectedArea = areaFilter,
                             onAreaSelect = viewModel::setAreaFilter,
                             onToggle = viewModel::toggle,
-                            onBrightness = { id, pct -> viewModel.setBrightness(id, pct) },
-                            onFanSpeed   = { id, pct -> viewModel.setFanSpeed(id, pct) },
+                            onBrightness = viewModel::setBrightness,
+                            onFanSpeed = viewModel::setFanSpeed,
+                            onClimateTemp = viewModel::setClimateTemperature,
+                            onClimateMode = viewModel::setClimateHvacMode,
+                            onCoverPosition = viewModel::setCoverPosition,
+                            onVacuumAction = viewModel::vacuumAction,
+                            onNumber = viewModel::setNumberValue,
+                            onSelect = viewModel::selectOption,
+                            onHumidity = viewModel::setHumidity,
+                            // Only annotate tiles when >1 gateway is configured —
+                            // otherwise the badge is noise.
+                            gatewayLabels = if (gatewayLabels.size > 1) gatewayLabels else emptyMap(),
                         )
                     }
                     isConnecting -> {
@@ -444,8 +460,16 @@ private fun DashboardBody(
     selectedArea: String?,
     onAreaSelect: (String?) -> Unit,
     onToggle: (HaEntityState) -> Unit,
-    onBrightness: (String, Int) -> Unit,
-    onFanSpeed: (String, Int) -> Unit,
+    onBrightness: (HaEntityState, Int) -> Unit,
+    onFanSpeed: (HaEntityState, Int) -> Unit,
+    onClimateTemp: (HaEntityState, Double) -> Unit = { _, _ -> },
+    onClimateMode: (HaEntityState, String) -> Unit = { _, _ -> },
+    onCoverPosition: (HaEntityState, Int) -> Unit = { _, _ -> },
+    onVacuumAction: (HaEntityState, String) -> Unit = { _, _ -> },
+    onNumber: (HaEntityState, Double) -> Unit = { _, _ -> },
+    onSelect: (HaEntityState, String) -> Unit = { _, _ -> },
+    onHumidity: (HaEntityState, Int) -> Unit = { _, _ -> },
+    gatewayLabels: Map<String, String> = emptyMap(),
 ) {
     // Group by section-resource-id so domains that share a label end up together.
     val groupedByResId = entities.groupBy { sectionResIdFor(it.domain) }
@@ -478,8 +502,16 @@ private fun DashboardBody(
                         HaTileCard(
                             entity = entity,
                             onToggle = { onToggle(entity) },
-                            onBrightness = { onBrightness(entity.entityId, it) },
-                            onFanSpeed   = { onFanSpeed(entity.entityId, it) },
+                            onBrightness = { onBrightness(entity, it) },
+                            onFanSpeed = { onFanSpeed(entity, it) },
+                            onClimateTemp = { onClimateTemp(entity, it) },
+                            onClimateMode = { onClimateMode(entity, it) },
+                            onCoverPosition = { onCoverPosition(entity, it) },
+                            onVacuumAction = { onVacuumAction(entity, it) },
+                            onNumber = { onNumber(entity, it) },
+                            onSelect = { onSelect(entity, it) },
+                            onHumidity = { onHumidity(entity, it) },
+                            gatewayLabel = gatewayLabels[entity.sourceDeviceId],
                             modifier = Modifier.weight(1f),
                         )
                     }

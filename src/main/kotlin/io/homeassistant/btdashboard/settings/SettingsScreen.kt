@@ -99,8 +99,7 @@ fun SettingsScreen(
             uiState.devices.forEach { device ->
                 DeviceRow(
                     device = device,
-                    isActive = device.id == uiState.activeDeviceId,
-                    onSwitch = { viewModel.switchDevice(device.id) },
+                    onResync = { viewModel.resync(device.id) },
                     onDelete = { viewModel.removeDevice(device.id) },
                 )
             }
@@ -249,52 +248,38 @@ fun SettingsScreen(
 @Composable
 private fun DeviceRow(
     device: DeviceConfig,
-    isActive: Boolean,
-    onSwitch: () -> Unit,
+    onResync: () -> Unit,
     onDelete: () -> Unit,
 ) {
+    // All configured gateways run in parallel — no "active" distinction. The
+    // row is informational + per-device actions (Resync, Remove). Connection
+    // status comes from the top connection banner; per-row state would need
+    // service plumbing we don't have yet.
     val shape = RoundedCornerShape(12.dp)
-    val borderColor = if (isActive) MaterialTheme.colorScheme.primary
-    else MaterialTheme.colorScheme.outlineVariant
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(shape)
-            .border(1.dp, borderColor, shape)
-            .background(
-                if (isActive) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                else MaterialTheme.colorScheme.surface
-            )
-            .clickable(enabled = !isActive, onClick = onSwitch)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
+            .background(MaterialTheme.colorScheme.surface)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = device.name,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
-            )
+            Text(text = device.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
             Text(
                 text = device.address,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        if (isActive) {
-            Icon(
-                Icons.Filled.Check,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp),
-            )
-            Spacer(Modifier.width(4.dp))
+        IconButton(onClick = onResync, modifier = Modifier.size(36.dp)) {
+            Icon(Icons.Filled.Refresh, contentDescription = "Resync", modifier = Modifier.size(20.dp))
         }
         IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
             Icon(
                 Icons.Filled.Delete,
-                contentDescription = null,
+                contentDescription = "Entfernen",
                 tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier.size(18.dp),
             )
