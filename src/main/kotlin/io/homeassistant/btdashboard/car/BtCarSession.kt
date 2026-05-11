@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard.car
+package io.github.gruni22.btdashboard.car
 
 import android.content.Intent
 import androidx.car.app.Screen

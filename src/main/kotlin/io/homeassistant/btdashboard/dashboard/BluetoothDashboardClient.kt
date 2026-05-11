@@ -1,13 +1,13 @@
-package io.homeassistant.btdashboard.dashboard
+package io.github.gruni22.btdashboard.dashboard
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import androidx.core.content.getSystemService
-import io.homeassistant.btdashboard.bluetooth.BluetoothTransport
-import io.homeassistant.btdashboard.bluetooth.FrameProtocol
-import io.homeassistant.btdashboard.bluetooth.openBluetoothTransport
+import io.github.gruni22.btdashboard.bluetooth.BluetoothTransport
+import io.github.gruni22.btdashboard.bluetooth.FrameProtocol
+import io.github.gruni22.btdashboard.bluetooth.openBluetoothTransport
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CompletableDeferred
@@ -56,7 +56,7 @@ class BluetoothDashboardClient(context: Context) {
         // If we skip this and the old BLE connection is still up, Android's BLE stack reuses
         // the same underlying ACL link for the new connectGatt() call. The ESP32 never fires
         // onConnect() again, gSubscribeNotified stays true, and client_connected is never sent
-        // to the Pi — so auth_required never arrives and we time out after 30 s.
+        // to Home Assistant — so auth_required never arrives and we time out after 30 s.
         transport?.let { old ->
             transport = null
             receiveJob?.cancel()

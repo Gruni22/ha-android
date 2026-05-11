@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard.bluetooth
+package io.github.gruni22.btdashboard.bluetooth
 
 import java.io.IOException
 

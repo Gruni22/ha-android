@@ -8,15 +8,15 @@ plugins {
 }
 
 android {
-    namespace = "io.homeassistant.btdashboard"
+    namespace = "io.github.gruni22.btdashboard"
     compileSdk = libs.versions.androidSdk.compile.get().toInt()
 
     defaultConfig {
         applicationId = "io.github.gruni22.btdashboard"
         minSdk = 26
         targetSdk = libs.versions.androidSdk.target.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 10
+        versionName = "1.0.9"
     }
 
     signingConfigs {
@@ -35,7 +35,21 @@ android {
     buildTypes {
         debug { applicationIdSuffix = ".debug" }
         release {
-            isMinifyEnabled = false
+            // R8 minify + resource shrink. Produces mapping.txt that Play Console
+            // uses to deobfuscate stack traces. Library consumer-rules cover most
+            // of our deps (Hilt, Room, Compose, Car App Library, ML Kit, Nordic);
+            // app-specific keeps live in proguard-rules.pro.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+            // Bundle native debug symbols (when present) so Play Console can
+            // symbolicate native crashes from .so files like ML Kit's barcode lib.
+            ndk {
+                debugSymbolLevel = "SYMBOL_TABLE"
+            }
             signingConfig = signingConfigs.getByName("release")
         }
     }
@@ -48,6 +62,13 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+        }
     }
 }
 
@@ -113,4 +134,14 @@ dependencies {
     // connections; this library has battle-tested workarounds.
     implementation(libs.nordic.ble)
     implementation(libs.nordic.ble.ktx)
+
+    // ── Tests ──────────────────────────────────────────────────────────────
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.junit.jupiter.params)
+    testRuntimeOnly(libs.junit.platform.launcher)
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
 }

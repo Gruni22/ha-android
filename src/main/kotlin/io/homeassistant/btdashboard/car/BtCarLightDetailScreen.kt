@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard.car
+package io.github.gruni22.btdashboard.car
 
 import androidx.car.app.CarContext
 import androidx.car.app.Screen
@@ -8,8 +8,9 @@ import androidx.car.app.model.Pane
 import androidx.car.app.model.PaneTemplate
 import androidx.car.app.model.Row
 import androidx.car.app.model.Template
-import io.homeassistant.btdashboard.dashboard.HaEntityState
-import io.homeassistant.btdashboard.service.BleConnectionService
+import io.github.gruni22.btdashboard.R
+import io.github.gruni22.btdashboard.dashboard.HaEntityState
+import io.github.gruni22.btdashboard.service.BleConnectionService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -50,7 +51,7 @@ class BtCarLightDetailScreen(
         if (e == null) {
             return PaneTemplate.Builder(
                 Pane.Builder()
-                    .addRow(Row.Builder().setTitle("Entity nicht gefunden").build())
+                    .addRow(Row.Builder().setTitle(carContext.getString(R.string.bt_aa_entity_not_found)).build())
                     .build()
             )
                 .setHeaderAction(Action.BACK)
@@ -61,21 +62,22 @@ class BtCarLightDetailScreen(
         val isOn = e.isActive
         val brightness = e.brightnessPercent
         val state = if (isOn) {
-            if (e.supportsBrightness) "An · $brightness%" else "An"
-        } else "Aus"
+            if (e.supportsBrightness) carContext.getString(R.string.bt_state_on_with_brightness, brightness)
+            else carContext.getString(R.string.bt_state_on)
+        } else carContext.getString(R.string.bt_state_off)
 
         val pane = Pane.Builder().apply {
-            addRow(Row.Builder().setTitle("Status").addText(state).build())
+            addRow(Row.Builder().setTitle(carContext.getString(R.string.bt_aa_status)).addText(state).build())
             if (isOn && e.supportsBrightness) {
                 addAction(
                     Action.Builder()
-                        .setTitle("− 10%")
+                        .setTitle(carContext.getString(R.string.bt_aa_brightness_minus))
                         .setOnClickListener { adjustBrightness(e, -10) }
                         .build()
                 )
                 addAction(
                     Action.Builder()
-                        .setTitle("+ 10%")
+                        .setTitle(carContext.getString(R.string.bt_aa_brightness_plus))
                         .setOnClickListener { adjustBrightness(e, +10) }
                         .build()
                 )
@@ -89,7 +91,7 @@ class BtCarLightDetailScreen(
                 ActionStrip.Builder()
                     .addAction(
                         Action.Builder()
-                            .setTitle(if (isOn) "Aus" else "An")
+                            .setTitle(if (isOn) carContext.getString(R.string.bt_state_off) else carContext.getString(R.string.bt_state_on))
                             .setOnClickListener { toggle(e) }
                             .build()
                     )

@@ -1,5 +1,8 @@
-package io.homeassistant.btdashboard.dashboard
+package io.github.gruni22.btdashboard.dashboard
 
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import io.github.gruni22.btdashboard.R
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -147,7 +150,7 @@ fun HaTileCard(
                         color = onBg,
                     )
                     Text(
-                        text = formatState(entity),
+                        text = formatState(LocalContext.current, entity),
                         style = MaterialTheme.typography.bodySmall,
                         color = onBg.copy(alpha = 0.65f),
                         maxLines = 1,
@@ -273,14 +276,14 @@ fun HaTileCard(
                     val cleaning = entity.vacuumIsCleaning
                     VacuumButton(
                         icon = if (cleaning) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                        label = if (cleaning) "Pause" else "Start",
+                        label = stringResource(if (cleaning) R.string.bt_vacuum_btn_pause else R.string.bt_vacuum_btn_start),
                         accent = accent,
                         onClick = { onVacuumAction(if (cleaning) "pause" else "start") },
                         modifier = Modifier.weight(1f),
                     )
                     VacuumButton(
                         icon = Icons.Filled.Home,
-                        label = "Dock",
+                        label = stringResource(R.string.bt_vacuum_btn_dock),
                         accent = accent,
                         onClick = { onVacuumAction("return_to_base") },
                         modifier = Modifier.weight(1f),
@@ -474,7 +477,7 @@ private fun HvacModeRow(
             FilterChip(
                 selected = mode == active,
                 onClick = { if (mode != active) onSelect(mode) },
-                label = { Text(hvacModeLabel(mode)) },
+                label = { Text(hvacModeLabel(LocalContext.current, mode)) },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = accent,
                     selectedLabelColor = Color.White,
@@ -510,13 +513,13 @@ private fun VacuumButton(
     }
 }
 
-private fun hvacModeLabel(mode: String): String = when (mode) {
-    "off" -> "Aus"
-    "heat" -> "Heizen"
-    "cool" -> "Kühlen"
-    "heat_cool", "auto" -> "Auto"
-    "dry" -> "Trocken"
-    "fan_only" -> "Lüfter"
+private fun hvacModeLabel(ctx: android.content.Context, mode: String): String = when (mode) {
+    "off" -> ctx.getString(R.string.bt_state_off)
+    "heat" -> ctx.getString(R.string.bt_hvac_heat)
+    "cool" -> ctx.getString(R.string.bt_hvac_cool)
+    "heat_cool", "auto" -> ctx.getString(R.string.bt_hvac_auto)
+    "dry" -> ctx.getString(R.string.bt_hvac_dry)
+    "fan_only" -> ctx.getString(R.string.bt_hvac_fan_only)
     else -> mode
 }
 
@@ -529,28 +532,29 @@ private fun sliderColors(accent: Color) = SliderDefaults.colors(
 
 // ── State formatting helpers (mirror HA's frontend pattern) ───────────────────
 
-private fun formatState(entity: HaEntityState): String {
+private fun formatState(ctx: android.content.Context, entity: HaEntityState): String {
     val state = entity.state
+    fun s(id: Int) = ctx.getString(id)
     return when (entity.domain) {
         "light", "switch", "input_boolean", "automation", "script", "fan" -> {
             if (state == "on") {
                 if (entity.domain == "light" && entity.supportsBrightness && entity.brightnessPercent > 0) {
-                    "An · ${entity.brightnessPercent}%"
-                } else "An"
-            } else if (state == "off") "Aus" else state
+                    ctx.getString(R.string.bt_state_on_with_brightness, entity.brightnessPercent)
+                } else s(R.string.bt_state_on)
+            } else if (state == "off") s(R.string.bt_state_off) else state
         }
         "lock" -> when (state) {
-            "locked" -> "Verriegelt"
-            "unlocked" -> "Entriegelt"
-            "locking" -> "Verriegelt..."
-            "unlocking" -> "Entriegelt..."
+            "locked" -> s(R.string.bt_state_locked)
+            "unlocked" -> s(R.string.bt_state_unlocked)
+            "locking" -> s(R.string.bt_state_locking)
+            "unlocking" -> s(R.string.bt_state_unlocking)
             else -> state
         }
         "cover" -> when (state) {
-            "open" -> "Offen"
-            "closed" -> "Geschlossen"
-            "opening" -> "Öffnet..."
-            "closing" -> "Schließt..."
+            "open" -> s(R.string.bt_state_open)
+            "closed" -> s(R.string.bt_state_closed)
+            "opening" -> s(R.string.bt_state_opening)
+            "closing" -> s(R.string.bt_state_closing)
             else -> state
         }
         "climate" -> {
@@ -565,12 +569,12 @@ private fun formatState(entity: HaEntityState): String {
                 if (isEmpty()) append(state)
             }
         }
-        "binary_sensor" -> if (state == "on") "Erkannt" else "Klar"
+        "binary_sensor" -> if (state == "on") s(R.string.bt_state_detected) else s(R.string.bt_state_clear)
         "media_player" -> when (state) {
-            "playing" -> entity.attributes["media_title"]?.toString() ?: "Spielt"
-            "paused" -> "Pausiert"
-            "idle" -> "Bereit"
-            "off" -> "Aus"
+            "playing" -> entity.attributes["media_title"]?.toString() ?: s(R.string.bt_media_playing)
+            "paused" -> s(R.string.bt_media_paused)
+            "idle" -> s(R.string.bt_media_idle)
+            "off" -> s(R.string.bt_state_off)
             else -> state
         }
         "sensor", "input_number", "number" -> {
@@ -578,23 +582,23 @@ private fun formatState(entity: HaEntityState): String {
             if (unit != null) "$state $unit" else state
         }
         "vacuum" -> when (state) {
-            "cleaning"  -> "Saugt"
-            "returning" -> "Fährt zur Station"
-            "paused"    -> "Pausiert"
-            "docked"    -> "An Station"
-            "idle"      -> "Bereit"
-            "error"     -> "Fehler"
+            "cleaning"  -> s(R.string.bt_vacuum_cleaning)
+            "returning" -> s(R.string.bt_vacuum_returning)
+            "paused"    -> s(R.string.bt_vacuum_paused)
+            "docked"    -> s(R.string.bt_vacuum_docked)
+            "idle"      -> s(R.string.bt_vacuum_idle)
+            "error"     -> s(R.string.bt_vacuum_error)
             else        -> state
         }
         "humidifier" -> {
             val target = entity.targetHumidity
             when {
-                state == "off"            -> "Aus"
-                target != null            -> "An · $target %"
-                else                      -> "An"
+                state == "off"            -> s(R.string.bt_state_off)
+                target != null            -> ctx.getString(R.string.bt_state_on_with_humidity, target)
+                else                      -> s(R.string.bt_state_on)
             }
         }
-        "scene"   -> "Szene"
+        "scene"   -> s(R.string.bt_state_scene)
         "select", "input_select" -> state  // current option name
         else -> state
     }

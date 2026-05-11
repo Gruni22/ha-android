@@ -1,9 +1,9 @@
-package io.homeassistant.btdashboard.bluetooth.rfcomm
+package io.github.gruni22.btdashboard.bluetooth.rfcomm
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothSocket
-import io.homeassistant.btdashboard.bluetooth.FrameProtocol
+import io.github.gruni22.btdashboard.bluetooth.FrameProtocol
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException

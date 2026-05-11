@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard.setup
+package io.github.gruni22.btdashboard.setup
 
 import android.Manifest
 import android.companion.AssociationRequest
@@ -85,7 +85,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
-import io.homeassistant.btdashboard.R
+import io.github.gruni22.btdashboard.R
 import kotlinx.coroutines.launch
 import timber.log.Timber
 

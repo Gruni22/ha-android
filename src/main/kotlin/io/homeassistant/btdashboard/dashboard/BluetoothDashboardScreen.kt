@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard.dashboard
+package io.github.gruni22.btdashboard.dashboard
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -107,7 +107,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import io.homeassistant.btdashboard.R
+import io.github.gruni22.btdashboard.R
 
 // ── HA design tokens ──────────────────────────────────────────────────────────
 
@@ -223,14 +223,14 @@ fun BluetoothDashboardScreen(
                 TopAppBar(
                     title = {
                         Text(
-                            activeDashboard?.title ?: "Home Assistant",
+                            activeDashboard?.title ?: stringResource(R.string.app_name),
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 20.sp,
                         )
                     },
                     navigationIcon = {
                         IconButton(onClick = { coroutineScope.launch { drawerState.open() } }) {
-                            Icon(Icons.Filled.Menu, contentDescription = "Menü")
+                            Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.bt_action_menu))
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -375,7 +375,7 @@ private fun DashboardDrawerContent(
         drawerContentColor   = MaterialTheme.colorScheme.onSurface,
     ) {
         Text(
-            "Home Assistant",
+            stringResource(R.string.app_name),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(20.dp),
@@ -400,7 +400,7 @@ private fun DashboardDrawerContent(
         HorizontalDivider()
         NavigationDrawerItem(
             icon = { Icon(Icons.Filled.Settings, null) },
-            label = { Text("Einstellungen") },
+            label = { Text(stringResource(R.string.bt_settings)) },
             selected = false,
             onClick = onSettings,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),

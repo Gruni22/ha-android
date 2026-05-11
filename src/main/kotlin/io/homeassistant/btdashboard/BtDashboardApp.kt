@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard
+package io.github.gruni22.btdashboard
 
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp

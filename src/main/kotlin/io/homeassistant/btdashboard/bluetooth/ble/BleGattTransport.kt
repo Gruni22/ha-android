@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard.bluetooth.ble
+package io.github.gruni22.btdashboard.bluetooth.ble
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
@@ -6,7 +6,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
-import io.homeassistant.btdashboard.bluetooth.FrameProtocol
+import io.github.gruni22.btdashboard.bluetooth.FrameProtocol
 import java.io.IOException
 import java.util.UUID
 import kotlinx.coroutines.CoroutineScope

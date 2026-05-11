@@ -1,14 +1,14 @@
-package io.homeassistant.btdashboard.dashboard
+package io.github.gruni22.btdashboard.dashboard
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import androidx.core.content.getSystemService
-import io.homeassistant.btdashboard.bluetooth.BluetoothTransport
-import io.homeassistant.btdashboard.bluetooth.openBluetoothTransport
-import io.homeassistant.btdashboard.config.BtConfig
-import io.homeassistant.btdashboard.protocol.PacketCodec
+import io.github.gruni22.btdashboard.bluetooth.BluetoothTransport
+import io.github.gruni22.btdashboard.bluetooth.openBluetoothTransport
+import io.github.gruni22.btdashboard.config.BtConfig
+import io.github.gruni22.btdashboard.protocol.PacketCodec
 import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,7 +37,7 @@ class HaPacketClient(private val context: Context) {
     enum class State { DISCONNECTED, CONNECTING, CONNECTED, ERROR }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private var transport: io.homeassistant.btdashboard.bluetooth.FrameProtocol? = null
+    private var transport: io.github.gruni22.btdashboard.bluetooth.FrameProtocol? = null
     private var receiveJob: Job? = null
 
     private val _state = MutableStateFlow(State.DISCONNECTED)
@@ -164,7 +164,7 @@ class HaPacketClient(private val context: Context) {
         }
     }
 
-    private suspend fun receiveLoop(t: io.homeassistant.btdashboard.bluetooth.FrameProtocol) {
+    private suspend fun receiveLoop(t: io.github.gruni22.btdashboard.bluetooth.FrameProtocol) {
         try {
             while (t.isOpen) {
                 val raw = t.readFrame()

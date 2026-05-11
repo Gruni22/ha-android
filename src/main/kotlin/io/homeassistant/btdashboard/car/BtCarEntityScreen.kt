@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard.car
+package io.github.gruni22.btdashboard.car
 
 import android.content.ComponentName
 import android.content.Intent
@@ -15,11 +15,12 @@ import androidx.car.app.model.ListTemplate
 import androidx.car.app.model.Row
 import androidx.car.app.model.Template
 import androidx.car.app.model.Toggle
-import io.homeassistant.btdashboard.dashboard.BluetoothDashboardClient
-import io.homeassistant.btdashboard.dashboard.HaDashboardInfo
-import io.homeassistant.btdashboard.dashboard.HaEntityState
-import io.homeassistant.btdashboard.dashboard.toggleAction
-import io.homeassistant.btdashboard.service.BleConnectionService
+import io.github.gruni22.btdashboard.R
+import io.github.gruni22.btdashboard.dashboard.BluetoothDashboardClient
+import io.github.gruni22.btdashboard.dashboard.HaDashboardInfo
+import io.github.gruni22.btdashboard.dashboard.HaEntityState
+import io.github.gruni22.btdashboard.dashboard.toggleAction
+import io.github.gruni22.btdashboard.service.BleConnectionService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -31,14 +32,14 @@ import timber.log.Timber
  * Main Android Auto screen.
  *
  * Layout:
- *   - Title bar shows the active AA dashboard name
- *   - Action strip: [Dashboard] (switch between AA dashboards) + [Refresh]
- *   - List of entities from the active AA dashboard's views
+ *   - Title bar shows the active dashboard name
+ *   - Action strip: [Dashboard] switcher when more than one dashboard exists
+ *   - List of entities from the active dashboard's views
  *   - Tap on a Light row → BtCarLightDetailScreen with brightness +/- controls
  *
- * Filter rule: only dashboards whose title/url-path/view-title/view-path contain
- * "aa" (case-insensitive) are shown. If no AA dashboard exists, falls back to
- * showing every entity so the head unit isn't empty.
+ * The Pi-side integration already groups entities by `DASH_*` labels into the
+ * `dashboards` flow; we just render those as-is so AA matches the phone's
+ * label-derived grouping.
  */
 class BtCarEntityScreen(carContext: CarContext) : Screen(carContext) {
 
@@ -46,9 +47,9 @@ class BtCarEntityScreen(carContext: CarContext) : Screen(carContext) {
     private var service: BleConnectionService? = null
 
     private var status = Status.CONNECTING
-    private var aaDashboards: List<HaDashboardInfo> = emptyList()
+    private var dashboards: List<HaDashboardInfo> = emptyList()
     private var allEntities: List<HaEntityState> = emptyList()
-    private var activeIndex: Int = 0  // index into aaDashboards
+    private var activeIndex: Int = 0  // index into dashboards
 
     private enum class Status { CONNECTING, CONNECTED, ERROR, NO_SERVICE }
 
@@ -95,38 +96,25 @@ class BtCarEntityScreen(carContext: CarContext) : Screen(carContext) {
             // Use allEntities (full DB) instead of svc.entities (phone-view-filtered)
             // so AA's dashboard selection is independent from the phone's.
             kotlinx.coroutines.flow.combine(svc.allEntities, svc.dashboards) { ents, dashes ->
-                ents to filterAaDashboards(dashes)
-            }.collect { (ents, aa) ->
+                ents to dashes
+            }.collect { (ents, dashes) ->
                 allEntities = ents
-                aaDashboards = aa
-                if (activeIndex >= aaDashboards.size) activeIndex = 0
+                dashboards = dashes
+                if (activeIndex >= dashboards.size) activeIndex = 0
                 invalidate()
             }
         }
     }
 
-    /** Match "aa" anywhere in dashboard title/url-path/view title/view path. */
-    private fun filterAaDashboards(dashboards: List<HaDashboardInfo>): List<HaDashboardInfo> {
-        fun isAa(s: String) = s.contains("aa", ignoreCase = true)
-        return dashboards.filter { dash ->
-            isAa(dash.title) || isAa(dash.urlPath) ||
-                dash.views.any { isAa(it.title) || isAa(it.path) }
-        }
-    }
-
     private fun visibleEntities(): List<HaEntityState> {
-        val activeDash = aaDashboards.getOrNull(activeIndex)
-        val aaViews = activeDash?.views?.filter {
-            it.title.contains("aa", ignoreCase = true) ||
-                it.path.contains("aa", ignoreCase = true)
-        }.orEmpty()
-        val ids: Set<String> = aaViews.flatMap { it.entityIds }.toSet()
+        val activeDash = dashboards.getOrNull(activeIndex)
+        val ids: Set<String> = activeDash?.views?.flatMap { it.entityIds }?.toSet().orEmpty()
         val filtered = if (ids.isNotEmpty()) {
             allEntities.filter { it.entityId in ids }
-        } else if (aaDashboards.isEmpty()) {
-            allEntities  // no AA dashboard at all → fallback
+        } else if (dashboards.isEmpty()) {
+            allEntities  // no dashboards configured → fallback so the screen isn't empty
         } else {
-            emptyList()  // selected AA dashboard has no entities yet
+            emptyList()  // selected dashboard has no entities yet
         }
         return filtered
             .filter { it.domain in SUPPORTED_DOMAINS }
@@ -150,31 +138,32 @@ class BtCarEntityScreen(carContext: CarContext) : Screen(carContext) {
         .build()
 
     private fun noServiceTemplate(): Template = ListTemplate.Builder()
-        .setTitle("Home Assistant")
+        .setTitle(carContext.getString(R.string.bt_dashboard_title))
         .setHeaderAction(Action.APP_ICON)
         .setSingleList(
             ItemList.Builder()
-                .addItem(Row.Builder().setTitle("Nicht eingerichtet")
-                    .addText("Öffne die Phone-App, um Home Assistant zu verbinden.").build())
+                .addItem(Row.Builder().setTitle(carContext.getString(R.string.bt_aa_setup_not_yet))
+                    .addText(carContext.getString(R.string.bt_aa_setup_not_yet_hint)).build())
                 .build()
         )
         .build()
 
     private fun errorTemplate(): Template = ListTemplate.Builder()
-        .setTitle("Home Assistant")
+        .setTitle(carContext.getString(R.string.bt_dashboard_title))
         .setHeaderAction(Action.APP_ICON)
         .setActionStrip(ActionStrip.Builder()
-            .addAction(Action.Builder().setTitle("Erneut")
+            .addAction(Action.Builder().setTitle(carContext.getString(R.string.bt_aa_retry))
                 .setOnClickListener { service?.connect() }.build())
             .build())
         .setSingleList(ItemList.Builder()
-            .addItem(Row.Builder().setTitle("Verbindung fehlgeschlagen").build())
+            .addItem(Row.Builder().setTitle(carContext.getString(R.string.bt_failed_connection)).build())
             .build())
         .build()
 
     private fun entityListTemplate(): Template {
         val entities = visibleEntities()
-        val title = aaDashboards.getOrNull(activeIndex)?.title ?: "Home Assistant"
+        val title = dashboards.getOrNull(activeIndex)?.title
+            ?: carContext.getString(R.string.bt_dashboard_title)
         val itemList = ItemList.Builder()
         // Controllable entities. AA disallows a row with BOTH toggle and browsable
         // — so lights with brightness become browsable (tap opens a detail screen
@@ -225,8 +214,8 @@ class BtCarEntityScreen(carContext: CarContext) : Screen(carContext) {
         if (itemList.build().items.isEmpty()) {
             itemList.addItem(
                 Row.Builder()
-                    .setTitle("Keine Geräte")
-                    .addText("Im Dashboard \"$title\" sind noch keine Entities konfiguriert.")
+                    .setTitle(carContext.getString(R.string.bt_aa_no_entities_title))
+                    .addText(carContext.getString(R.string.bt_aa_no_entities_for_dashboard, title))
                     .build()
             )
         }
@@ -235,15 +224,15 @@ class BtCarEntityScreen(carContext: CarContext) : Screen(carContext) {
         // in its ActionStrip. We prioritise the dashboard switcher (only meaningful
         // when there are several AA dashboards). Refresh is dropped — STATE_CHANGE
         // pushes from HA keep the entity list up-to-date automatically anyway.
-        val actionStrip = if (aaDashboards.size > 1) {
+        val actionStrip = if (dashboards.size > 1) {
             ActionStrip.Builder()
                 .addAction(
                     Action.Builder()
-                        .setTitle("Dashboard")
+                        .setTitle(carContext.getString(R.string.bt_aa_action_dashboard))
                         .setOnClickListener {
                             screenManager.push(
                                 BtCarDashboardListScreen(
-                                    carContext, aaDashboards, activeIndex,
+                                    carContext, dashboards, activeIndex,
                                 ) { newIndex ->
                                     activeIndex = newIndex
                                     invalidate()
@@ -262,45 +251,49 @@ class BtCarEntityScreen(carContext: CarContext) : Screen(carContext) {
         return builder.build()
     }
 
-    private fun stateText(e: HaEntityState): String = when (e.domain) {
-        "light" -> if (e.isActive) {
-            if (e.supportsBrightness) "An · ${e.brightnessPercent}%" else "An"
-        } else "Aus"
-        "switch", "input_boolean", "automation", "fan", "humidifier", "script"
-            -> if (e.isActive) "An" else "Aus"
-        "lock" -> if (e.isActive) "Entriegelt" else "Verriegelt"
-        "cover" -> if (e.isActive) "Offen" else "Geschlossen"
-        "binary_sensor" -> if (e.isActive) "Erkannt" else "Klar"
-        "climate" -> {
-            val cur = e.currentTemperature
-            val tgt = e.targetTemperature
-            buildString {
-                if (cur != null) append("${"%.1f".format(cur)}°")
-                if (tgt != null) {
-                    if (isNotEmpty()) append(" → ")
-                    append("${"%.1f".format(tgt)}°")
+    private fun stateText(e: HaEntityState): String {
+        fun s(id: Int) = carContext.getString(id)
+        return when (e.domain) {
+            "light" -> if (e.isActive) {
+                if (e.supportsBrightness) carContext.getString(R.string.bt_state_on_with_brightness, e.brightnessPercent)
+                else s(R.string.bt_state_on)
+            } else s(R.string.bt_state_off)
+            "switch", "input_boolean", "automation", "fan", "humidifier", "script"
+                -> if (e.isActive) s(R.string.bt_state_on) else s(R.string.bt_state_off)
+            "lock" -> if (e.isActive) s(R.string.bt_state_unlocked) else s(R.string.bt_state_locked)
+            "cover" -> if (e.isActive) s(R.string.bt_state_open) else s(R.string.bt_state_closed)
+            "binary_sensor" -> if (e.isActive) s(R.string.bt_state_detected) else s(R.string.bt_state_clear)
+            "climate" -> {
+                val cur = e.currentTemperature
+                val tgt = e.targetTemperature
+                buildString {
+                    if (cur != null) append("${"%.1f".format(cur)}°")
+                    if (tgt != null) {
+                        if (isNotEmpty()) append(" → ")
+                        append("${"%.1f".format(tgt)}°")
+                    }
+                    if (isEmpty()) append(e.state)
                 }
-                if (isEmpty()) append(e.state)
             }
+            "vacuum" -> when (e.state) {
+                "cleaning"  -> s(R.string.bt_vacuum_cleaning)
+                "returning" -> s(R.string.bt_vacuum_returning)
+                "paused"    -> s(R.string.bt_vacuum_paused)
+                "docked"    -> s(R.string.bt_vacuum_docked)
+                "idle"      -> s(R.string.bt_vacuum_idle)
+                "error"     -> s(R.string.bt_vacuum_error)
+                else        -> e.state
+            }
+            "scene" -> s(R.string.bt_state_scene)
+            "media_player" -> when (e.state) {
+                "playing" -> e.attributes["media_title"]?.toString() ?: s(R.string.bt_media_playing)
+                "paused"  -> s(R.string.bt_media_paused)
+                "idle"    -> s(R.string.bt_media_idle)
+                "off"     -> s(R.string.bt_state_off)
+                else      -> e.state
+            }
+            else -> if (e.unit != null) "${e.state} ${e.unit}" else e.state
         }
-        "vacuum" -> when (e.state) {
-            "cleaning"  -> "Saugt"
-            "returning" -> "Fährt zur Station"
-            "paused"    -> "Pausiert"
-            "docked"    -> "An Station"
-            "idle"      -> "Bereit"
-            "error"     -> "Fehler"
-            else        -> e.state
-        }
-        "scene" -> "Szene"
-        "media_player" -> when (e.state) {
-            "playing" -> e.attributes["media_title"]?.toString() ?: "Spielt"
-            "paused"  -> "Pausiert"
-            "idle"    -> "Bereit"
-            "off"     -> "Aus"
-            else      -> e.state
-        }
-        else -> if (e.unit != null) "${e.state} ${e.unit}" else e.state
     }
 
     companion object {

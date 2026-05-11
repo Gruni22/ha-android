@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard.car
+package io.github.gruni22.btdashboard.car
 
 import androidx.car.app.CarContext
 import androidx.car.app.Screen
@@ -9,11 +9,13 @@ import androidx.car.app.model.ListTemplate
 import androidx.car.app.model.Row
 import androidx.car.app.model.Template
 import androidx.core.graphics.drawable.IconCompat
-import io.homeassistant.btdashboard.dashboard.HaDashboardInfo
+import io.github.gruni22.btdashboard.R
+import io.github.gruni22.btdashboard.dashboard.HaDashboardInfo
 
 /**
- * Lists every "AA" dashboard so the driver can switch between them.
- * Tap pops back to the entity screen with the new dashboard active.
+ * Lists every dashboard Home Assistant has exposed (DASH_*-label-derived) so the
+ * driver can switch between them. Tap pops back to the entity screen with
+ * the new dashboard active.
  */
 class BtCarDashboardListScreen(
     carContext: CarContext,
@@ -25,17 +27,13 @@ class BtCarDashboardListScreen(
     override fun onGetTemplate(): Template {
         val list = ItemList.Builder().apply {
             dashboards.forEachIndexed { i, dash ->
-                val aaViews = dash.views.filter {
-                    it.title.contains("aa", ignoreCase = true) ||
-                        it.path.contains("aa", ignoreCase = true)
-                }
-                val entityCount = aaViews.sumOf { it.entityIds.size }
-                val viewNames = aaViews.joinToString { it.title }
+                val entityCount = dash.views.sumOf { it.entityIds.size }
+                val viewNames = dash.views.joinToString { it.title }
                 addItem(
                     Row.Builder()
                         .setTitle(if (i == currentIndex) "✓  ${dash.title}" else dash.title)
-                        .addText(if (viewNames.isNotBlank()) viewNames else "Keine AA-Views")
-                        .addText("$entityCount Geräte")
+                        .addText(if (viewNames.isNotBlank()) viewNames else carContext.getString(R.string.bt_aa_no_views))
+                        .addText(carContext.getString(R.string.bt_aa_devices_count, entityCount))
                         .setOnClickListener {
                             onSelect(i)
                             screenManager.pop()
@@ -47,7 +45,7 @@ class BtCarDashboardListScreen(
 
         return ListTemplate.Builder()
             .setHeaderAction(Action.BACK)
-            .setTitle("Dashboard wählen")
+            .setTitle(carContext.getString(R.string.bt_aa_dashboard_picker_title))
             .setSingleList(list)
             .build()
     }

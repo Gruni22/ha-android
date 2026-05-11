@@ -4,9 +4,10 @@
     <string name="app_name">btdashboard – HA over Bluetooth</string>
 
     <!-- Welcome screen -->
-    <string name="bt_welcome_title">Home&#x202F;Assistant\nBluetooth</string>
+    <string name="bt_welcome_title">btdashboard\nHA over Bluetooth</string>
     <string name="bt_welcome_details">Control your Home&#x202F;Assistant directly from your Android device via Bluetooth — no internet required.\n\nHome&#x202F;Assistant is open source home automation that puts local control and privacy first.</string>
     <string name="bt_welcome_connect">Connect via Bluetooth</string>
+    <string name="bt_welcome_load_demo">Load demo data (no gateway needed)</string>
 
     <!-- Setup / Discovery screen -->
     <string name="bt_setup_title">Home Assistant Bluetooth-App</string>
@@ -31,6 +32,8 @@
     <string name="bt_setup_passcode_hint">Scan the QR code shown in your Home Assistant notification, or enter the passcode manually.</string>
     <string name="bt_setup_scan_qr">Scan QR Code</string>
     <string name="bt_setup_scan_prompt">Scan the QR code from Home Assistant</string>
+    <string name="bt_setup_camera_permission_required">Camera permission needed to scan the QR code</string>
+    <string name="bt_setup_scan_hint">Hold the QR code from Home Assistant in the viewfinder</string>
     <string name="bt_setup_or_manual">or enter manually</string>
     <string name="bt_setup_passcode_label">Passcode</string>
     <string name="bt_setup_submit_passcode">Connect</string>
@@ -47,9 +50,7 @@
     <string name="bt_settings_last_sync">Last synced</string>
     <string name="bt_settings_section_sync">Data</string>
     <string name="bt_settings_resync">Sync now</string>
-    <string name="bt_settings_section_reset">Danger zone</string>
-    <string name="bt_settings_reset_hint">Removes the active device and clears its local data. Other devices remain unaffected.</string>
-    <string name="bt_settings_reset">Remove active device</string>
+    <string name="bt_settings_version">Version %1$s (build %2$d)</string>
 
     <!-- Dashboard screen -->
     <string name="bt_dashboard_title">Home Assistant</string>
@@ -74,6 +75,82 @@
     <string name="bt_refresh">Refresh</string>
     <string name="bt_settings">Settings</string>
     <string name="bt_clear_search">Clear search</string>
+
+    <!-- Common UI bits -->
+    <string name="bt_action_menu">Menu</string>
+    <string name="bt_action_back">Back</string>
+
+    <!-- Setup error messages -->
+    <string name="bt_setup_error_bluetooth_unavailable">Bluetooth not available</string>
+    <string name="bt_setup_error_scan_failed">Scan failed (code %1$d)</string>
+    <string name="bt_setup_error_no_device_selected">Please pick a device first</string>
+    <string name="bt_setup_error_invalid_passcode">Invalid passcode: %1$s</string>
+    <string name="bt_setup_status_connecting">Connecting…</string>
+    <string name="bt_setup_error_connection">Connection error</string>
+
+    <!-- Sync messages -->
+    <string name="bt_sync_error_no_service">Service not connected — please re-open the app</string>
+    <string name="bt_sync_status_syncing">Syncing…</string>
+    <string name="bt_sync_status_done">Sync done (%1$d areas, %2$d entities)</string>
+    <string name="bt_sync_error_generic">Sync error</string>
+    <string name="bt_sync_error_unknown">Unknown sync error</string>
+
+    <!-- Settings: per-row content descriptions -->
+    <string name="bt_settings_resync_cd">Resync</string>
+    <string name="bt_settings_remove_cd">Remove</string>
+
+    <!-- Android Auto -->
+    <string name="bt_aa_action_dashboard">Dashboard</string>
+    <string name="bt_aa_dashboard_picker_title">Choose dashboard</string>
+    <string name="bt_aa_no_views">No views</string>
+    <string name="bt_aa_devices_count">%1$d devices</string>
+    <string name="bt_aa_no_entities_title">No devices</string>
+    <string name="bt_aa_no_entities_for_dashboard">Dashboard \"%1$s\" has no entities configured yet.</string>
+    <string name="bt_aa_setup_not_yet">Not set up yet</string>
+    <string name="bt_aa_setup_not_yet_hint">Open the phone app to connect to Home Assistant.</string>
+    <string name="bt_aa_retry">Retry</string>
+    <string name="bt_aa_status">Status</string>
+    <string name="bt_aa_entity_not_found">Entity not found</string>
+    <string name="bt_aa_brightness_minus">− 10%%</string>
+    <string name="bt_aa_brightness_plus">+ 10%%</string>
+
+    <!-- Generic state texts (used in Car App rows + tile state lines) -->
+    <string name="bt_state_on">On</string>
+    <string name="bt_state_off">Off</string>
+    <string name="bt_state_locked">Locked</string>
+    <string name="bt_state_unlocked">Unlocked</string>
+    <string name="bt_state_open">Open</string>
+    <string name="bt_state_closed">Closed</string>
+    <string name="bt_state_detected">Detected</string>
+    <string name="bt_state_clear">Clear</string>
+    <string name="bt_state_scene">Scene</string>
+    <string name="bt_state_on_with_brightness">On · %1$d%%</string>
+    <string name="bt_state_on_with_humidity">On · %1$d %%</string>
+    <string name="bt_state_locking">Locking…</string>
+    <string name="bt_state_unlocking">Unlocking…</string>
+    <string name="bt_state_opening">Opening…</string>
+    <string name="bt_state_closing">Closing…</string>
+
+    <!-- HVAC modes -->
+    <string name="bt_hvac_heat">Heat</string>
+    <string name="bt_hvac_cool">Cool</string>
+    <string name="bt_hvac_auto">Auto</string>
+    <string name="bt_hvac_dry">Dry</string>
+    <string name="bt_hvac_fan_only">Fan</string>
+
+    <!-- Vacuum buttons -->
+    <string name="bt_vacuum_btn_start">Start</string>
+    <string name="bt_vacuum_btn_pause">Pause</string>
+    <string name="bt_vacuum_btn_dock">Dock</string>
+    <string name="bt_vacuum_cleaning">Cleaning</string>
+    <string name="bt_vacuum_returning">Returning to dock</string>
+    <string name="bt_vacuum_paused">Paused</string>
+    <string name="bt_vacuum_docked">Docked</string>
+    <string name="bt_vacuum_idle">Ready</string>
+    <string name="bt_vacuum_error">Error</string>
+    <string name="bt_media_playing">Playing</string>
+    <string name="bt_media_paused">Paused</string>
+    <string name="bt_media_idle">Ready</string>
 
     <!-- Dashboard section headers (per HA entity domain) -->
     <string name="bt_section_areas">Areas</string>

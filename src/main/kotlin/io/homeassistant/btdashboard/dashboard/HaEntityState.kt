@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard.dashboard
+package io.github.gruni22.btdashboard.dashboard
 
 import kotlin.math.roundToInt
 

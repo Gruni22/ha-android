@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard.settings
+package io.github.gruni22.btdashboard.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -46,8 +46,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import io.homeassistant.btdashboard.R
-import io.homeassistant.btdashboard.config.DeviceConfig
+import io.github.gruni22.btdashboard.BuildConfig
+import io.github.gruni22.btdashboard.R
+import io.github.gruni22.btdashboard.config.DeviceConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -177,31 +178,18 @@ fun SettingsScreen(
                 )
             }
 
-            HorizontalDivider()
-
-            // ── Danger zone ───────────────────────────────────────────────────
+            // ── Version footer ─────────────────────────────────────────────────
             Text(
-                text = stringResource(R.string.bt_settings_section_reset),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.error,
-            )
-            Text(
-                text = stringResource(R.string.bt_settings_reset_hint),
+                text = stringResource(
+                    R.string.bt_settings_version,
+                    BuildConfig.VERSION_NAME,
+                    BuildConfig.VERSION_CODE,
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
-            OutlinedButton(
-                onClick = viewModel::reset,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(50),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-            ) {
-                Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.bt_settings_reset))
-            }
         }
     }
 }
@@ -235,12 +223,16 @@ private fun DeviceRow(
             )
         }
         IconButton(onClick = onResync, modifier = Modifier.size(36.dp)) {
-            Icon(Icons.Filled.Refresh, contentDescription = "Resync", modifier = Modifier.size(20.dp))
+            Icon(
+                Icons.Filled.Refresh,
+                contentDescription = stringResource(R.string.bt_settings_resync_cd),
+                modifier = Modifier.size(20.dp),
+            )
         }
         IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
             Icon(
                 Icons.Filled.Delete,
-                contentDescription = "Entfernen",
+                contentDescription = stringResource(R.string.bt_settings_remove_cd),
                 tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier.size(18.dp),
             )

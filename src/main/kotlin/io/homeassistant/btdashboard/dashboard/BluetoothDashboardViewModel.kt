@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard.dashboard
+package io.github.gruni22.btdashboard.dashboard
 
 import android.content.ComponentName
 import android.content.Context
@@ -9,9 +9,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import io.homeassistant.btdashboard.config.BtConfig
-import io.homeassistant.btdashboard.dashboard.HaView
-import io.homeassistant.btdashboard.service.BleConnectionService
+import io.github.gruni22.btdashboard.config.BtConfig
+import io.github.gruni22.btdashboard.dashboard.HaView
+import io.github.gruni22.btdashboard.service.BleConnectionService
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow

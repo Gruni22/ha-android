@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard.db
+package io.github.gruni22.btdashboard.db
 
 import androidx.room.Dao
 import androidx.room.Insert

@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard.setup
+package io.github.gruni22.btdashboard.setup
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -35,6 +35,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
+import io.github.gruni22.btdashboard.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -89,12 +91,12 @@ fun QrScannerScreen(
                 verticalArrangement = Arrangement.Center,
             ) {
                 Text(
-                    "Kamera-Berechtigung benötigt um QR-Code zu scannen",
+                    stringResource(R.string.bt_setup_camera_permission_required),
                     color = Color.White,
                     style = MaterialTheme.typography.bodyLarge,
                 )
                 Button(onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) }) {
-                    Text("Berechtigung erteilen")
+                    Text(stringResource(R.string.bt_grant_permission))
                 }
             }
         }
@@ -105,13 +107,13 @@ fun QrScannerScreen(
         ) {
             Icon(
                 Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Zurück",
+                contentDescription = stringResource(R.string.bt_action_back),
                 tint = Color.White,
             )
         }
         // Bottom hint
         Text(
-            "QR-Code aus Home Assistant in den Sucher halten",
+            stringResource(R.string.bt_setup_scan_hint),
             color = Color.White,
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier

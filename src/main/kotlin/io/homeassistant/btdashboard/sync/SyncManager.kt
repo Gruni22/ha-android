@@ -1,12 +1,12 @@
-package io.homeassistant.btdashboard.sync
+package io.github.gruni22.btdashboard.sync
 
 import androidx.room.withTransaction
-import io.homeassistant.btdashboard.dashboard.HaPacketClient
-import io.homeassistant.btdashboard.db.AppDatabase
-import io.homeassistant.btdashboard.db.AreaEntity
-import io.homeassistant.btdashboard.db.DashboardEntity
-import io.homeassistant.btdashboard.db.EntityEntity
-import io.homeassistant.btdashboard.db.ViewEntity
+import io.github.gruni22.btdashboard.dashboard.HaPacketClient
+import io.github.gruni22.btdashboard.db.AppDatabase
+import io.github.gruni22.btdashboard.db.AreaEntity
+import io.github.gruni22.btdashboard.db.DashboardEntity
+import io.github.gruni22.btdashboard.db.EntityEntity
+import io.github.gruni22.btdashboard.db.ViewEntity
 import kotlinx.coroutines.CancellationException
 import org.json.JSONArray
 import org.json.JSONObject
@@ -29,9 +29,9 @@ class SyncManager(
         Timber.i("SyncManager[$deviceId]: starting initial sync")
 
         // Network requests outside the transaction (transactions hold a thread blocked).
-        val areas: List<io.homeassistant.btdashboard.dashboard.HaArea>
-        val entities: List<io.homeassistant.btdashboard.dashboard.HaEntityState>
-        val dashboards: List<io.homeassistant.btdashboard.dashboard.HaDashboardInfo>
+        val areas: List<io.github.gruni22.btdashboard.dashboard.HaArea>
+        val entities: List<io.github.gruni22.btdashboard.dashboard.HaEntityState>
+        val dashboards: List<io.github.gruni22.btdashboard.dashboard.HaDashboardInfo>
         try {
             areas = client.requestAreas()
             entities = client.requestDevices(areaId = null)

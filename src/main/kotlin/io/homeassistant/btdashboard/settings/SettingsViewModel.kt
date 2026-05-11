@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard.settings
+package io.github.gruni22.btdashboard.settings
 
 import android.content.ComponentName
 import android.content.Context
@@ -9,11 +9,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import io.homeassistant.btdashboard.config.BtConfig
-import io.homeassistant.btdashboard.config.DeviceConfig
-import io.homeassistant.btdashboard.db.AppDatabase
-import io.homeassistant.btdashboard.service.BleConnectionService
-import io.homeassistant.btdashboard.sync.SyncResult
+import io.github.gruni22.btdashboard.R
+import io.github.gruni22.btdashboard.config.BtConfig
+import io.github.gruni22.btdashboard.config.DeviceConfig
+import io.github.gruni22.btdashboard.db.AppDatabase
+import io.github.gruni22.btdashboard.service.BleConnectionService
+import io.github.gruni22.btdashboard.sync.SyncResult
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -119,13 +120,13 @@ class SettingsViewModel @Inject constructor(
      */
     fun resync(deviceId: String? = null) {
         val svc = service ?: run {
-            _uiState.update { it.copy(error = "Service nicht verbunden — App neu öffnen") }
+            _uiState.update { it.copy(error = context.getString(R.string.bt_sync_error_no_service)) }
             return
         }
         val targets = if (deviceId != null) listOfNotNull(btConfig.devices.find { it.id == deviceId })
                       else btConfig.devices
         if (targets.isEmpty()) return
-        _uiState.update { it.copy(syncing = true, syncStatus = "Synchronisiere…", error = null) }
+        _uiState.update { it.copy(syncing = true, syncStatus = context.getString(R.string.bt_sync_status_syncing), error = null) }
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 when (val result = svc.forceResync(deviceId)) {
@@ -136,7 +137,7 @@ class SettingsViewModel @Inject constructor(
                         _uiState.update {
                             it.copy(
                                 syncing = false,
-                                syncStatus = "Sync abgeschlossen (${result.areasCount} Bereiche, ${result.entitiesCount} Entitäten)",
+                                syncStatus = context.getString(R.string.bt_sync_status_done, result.areasCount, result.entitiesCount),
                                 devices = btConfig.devices,
                                 error = null,
                             )
@@ -149,7 +150,7 @@ class SettingsViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Settings: resync failed")
-                _uiState.update { it.copy(syncing = false, error = e.message ?: "Sync-Fehler", syncStatus = "") }
+                _uiState.update { it.copy(syncing = false, error = e.message ?: context.getString(R.string.bt_sync_error_generic), syncStatus = "") }
             }
         }
     }

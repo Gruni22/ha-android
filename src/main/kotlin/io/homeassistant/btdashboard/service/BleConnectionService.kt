@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard.service
+package io.github.gruni22.btdashboard.service
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -9,18 +9,18 @@ import android.os.Binder
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
-import io.homeassistant.btdashboard.config.BtConfig
-import io.homeassistant.btdashboard.config.DeviceConfig
-import io.homeassistant.btdashboard.dashboard.BluetoothDashboardClient
-import io.homeassistant.btdashboard.dashboard.HaArea
-import io.homeassistant.btdashboard.dashboard.HaDashboardInfo
-import io.homeassistant.btdashboard.dashboard.HaEntityState
-import io.homeassistant.btdashboard.dashboard.HaPacketClient
-import io.homeassistant.btdashboard.dashboard.HaView
-import io.homeassistant.btdashboard.db.AppDatabase
-import io.homeassistant.btdashboard.db.EntityEntity
-import io.homeassistant.btdashboard.sync.SyncManager
-import io.homeassistant.btdashboard.sync.SyncResult
+import io.github.gruni22.btdashboard.config.BtConfig
+import io.github.gruni22.btdashboard.config.DeviceConfig
+import io.github.gruni22.btdashboard.dashboard.BluetoothDashboardClient
+import io.github.gruni22.btdashboard.dashboard.HaArea
+import io.github.gruni22.btdashboard.dashboard.HaDashboardInfo
+import io.github.gruni22.btdashboard.dashboard.HaEntityState
+import io.github.gruni22.btdashboard.dashboard.HaPacketClient
+import io.github.gruni22.btdashboard.dashboard.HaView
+import io.github.gruni22.btdashboard.db.AppDatabase
+import io.github.gruni22.btdashboard.db.EntityEntity
+import io.github.gruni22.btdashboard.sync.SyncManager
+import io.github.gruni22.btdashboard.sync.SyncResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

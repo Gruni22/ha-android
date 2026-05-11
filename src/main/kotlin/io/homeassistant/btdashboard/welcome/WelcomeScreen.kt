@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard.welcome
+package io.github.gruni22.btdashboard.welcome
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -26,7 +26,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import io.homeassistant.btdashboard.R
+import io.github.gruni22.btdashboard.R
 
 private val ICON_SIZE = 120.dp
 private val MAX_CONTENT_WIDTH = 480.dp
@@ -34,6 +34,7 @@ private val MAX_CONTENT_WIDTH = 480.dp
 @Composable
 fun WelcomeScreen(
     onConnectClick: () -> Unit,
+    onLoadDemo: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -56,7 +57,7 @@ fun WelcomeScreen(
 
         Spacer(Modifier.weight(0.8f))
 
-        BottomButtons(onConnectClick = onConnectClick)
+        BottomButtons(onConnectClick = onConnectClick, onLoadDemo = onLoadDemo)
     }
 }
 
@@ -64,7 +65,7 @@ fun WelcomeScreen(
 private fun ColumnScope.WelcomeText() {
     // Both styles use textAlign = Center, matching HATextStyle.Headline / HATextStyle.Body
     Text(
-        text = "Home Assistant\nBluetooth",
+        text = stringResource(R.string.bt_welcome_title),
         style = MaterialTheme.typography.headlineMedium,
         fontWeight = FontWeight.W500,
         textAlign = TextAlign.Center,
@@ -80,7 +81,7 @@ private fun ColumnScope.WelcomeText() {
 }
 
 @Composable
-private fun ColumnScope.BottomButtons(onConnectClick: () -> Unit) {
+private fun ColumnScope.BottomButtons(onConnectClick: () -> Unit, onLoadDemo: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -91,13 +92,21 @@ private fun ColumnScope.BottomButtons(onConnectClick: () -> Unit) {
             onClick = onConnectClick,
             modifier = Modifier
                 .widthIn(max = MAX_CONTENT_WIDTH)
-                .fillMaxWidth()
-                .padding(bottom = 24.dp),
+                .fillMaxWidth(),
             shape = RoundedCornerShape(50),
         ) {
             Text(
                 stringResource(R.string.bt_welcome_connect),
                 fontWeight = FontWeight.W500,
+            )
+        }
+        TextButton(
+            onClick = onLoadDemo,
+            modifier = Modifier.padding(bottom = 16.dp),
+        ) {
+            Text(
+                stringResource(R.string.bt_welcome_load_demo),
+                style = MaterialTheme.typography.bodySmall,
             )
         }
     }

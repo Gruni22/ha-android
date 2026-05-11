@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard.ui
+package io.github.gruni22.btdashboard.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme

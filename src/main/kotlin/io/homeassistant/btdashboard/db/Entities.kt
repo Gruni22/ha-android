@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard.db
+package io.github.gruni22.btdashboard.db
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

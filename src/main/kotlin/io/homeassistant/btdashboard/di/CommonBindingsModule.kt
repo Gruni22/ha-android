@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard.di
+package io.github.gruni22.btdashboard.di
 
 import dagger.Module
 import dagger.Provides

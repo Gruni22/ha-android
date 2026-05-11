@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard
+package io.github.gruni22.btdashboard
 
 import android.companion.AssociationRequest
 import android.companion.BluetoothLeDeviceFilter
@@ -16,12 +16,17 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
-import io.homeassistant.btdashboard.config.BtConfig
-import io.homeassistant.btdashboard.dashboard.BluetoothDashboardScreen
-import io.homeassistant.btdashboard.settings.SettingsScreen
-import io.homeassistant.btdashboard.setup.SetupScreen
-import io.homeassistant.btdashboard.ui.HaBluetoothTheme
-import io.homeassistant.btdashboard.welcome.WelcomeScreen
+import io.github.gruni22.btdashboard.config.BtConfig
+import io.github.gruni22.btdashboard.dashboard.BluetoothDashboardScreen
+import io.github.gruni22.btdashboard.demo.DemoData
+import io.github.gruni22.btdashboard.settings.SettingsScreen
+import io.github.gruni22.btdashboard.setup.SetupScreen
+import io.github.gruni22.btdashboard.ui.HaBluetoothTheme
+import io.github.gruni22.btdashboard.welcome.WelcomeScreen
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 private const val HA_BLE_SVC_UUID = "a10d4b1c-bf45-4c2a-9c32-4a8f7e3d1234"
@@ -48,8 +53,23 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 NavHost(navController, startDestination = startDest) {
                     composable("welcome") {
+                        val ctx = applicationContext
                         WelcomeScreen(
                             onConnectClick = { navController.navigate("setup") },
+                            onLoadDemo = {
+                                // Seeds the local Room DB with a representative
+                                // smart-home so the dashboard renders without a
+                                // real ESP32 gateway — used for screenshots and
+                                // manual UI verification.
+                                CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+                                    DemoData.seed(ctx)
+                                    launch(Dispatchers.Main) {
+                                        navController.navigate("dashboard") {
+                                            popUpTo("welcome") { inclusive = true }
+                                        }
+                                    }
+                                }
+                            },
                         )
                     }
                     composable("setup") {

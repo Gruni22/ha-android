@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard.protocol
+package io.github.gruni22.btdashboard.protocol
 
 import java.nio.ByteBuffer
 import java.nio.ByteOrder

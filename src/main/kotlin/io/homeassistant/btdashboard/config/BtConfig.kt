@@ -1,7 +1,7 @@
-package io.homeassistant.btdashboard.config
+package io.github.gruni22.btdashboard.config
 
 import android.content.Context
-import io.homeassistant.btdashboard.bluetooth.BluetoothTransport
+import io.github.gruni22.btdashboard.bluetooth.BluetoothTransport
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID

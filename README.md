@@ -231,7 +231,7 @@ This indicates the `state_changed` push from HA isn't reaching the app. Check th
 ### Inspect logs
 
 ```bash
-adb logcat --pid=$(adb shell pidof io.homeassistant.btdashboard.debug) \
+adb logcat --pid=$(adb shell pidof io.github.gruni22.btdashboard.debug) \
   | grep -E "Timber|HaPacketClient|HaBleManager|SyncManager"
 ```
 

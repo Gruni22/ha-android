@@ -1,4 +1,4 @@
-package io.homeassistant.btdashboard.setup
+package io.github.gruni22.btdashboard.setup
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothManager
@@ -13,14 +13,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import io.homeassistant.btdashboard.bluetooth.BluetoothTransport
-import io.homeassistant.btdashboard.config.BtConfig
-import io.homeassistant.btdashboard.config.DeviceConfig
-import io.homeassistant.btdashboard.dashboard.HaPacketClient
+import io.github.gruni22.btdashboard.R
+import io.github.gruni22.btdashboard.bluetooth.BluetoothTransport
+import io.github.gruni22.btdashboard.config.BtConfig
+import io.github.gruni22.btdashboard.config.DeviceConfig
+import io.github.gruni22.btdashboard.dashboard.HaPacketClient
 import java.util.UUID
-import io.homeassistant.btdashboard.db.AppDatabase
-import io.homeassistant.btdashboard.sync.SyncManager
-import io.homeassistant.btdashboard.sync.SyncResult
+import io.github.gruni22.btdashboard.db.AppDatabase
+import io.github.gruni22.btdashboard.sync.SyncManager
+import io.github.gruni22.btdashboard.sync.SyncResult
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -75,7 +76,7 @@ class SetupViewModel @Inject constructor(
     @SuppressLint("MissingPermission")
     fun startScan() {
         val scanner = btAdapter?.bluetoothLeScanner ?: run {
-            _uiState.update { it.copy(error = "Bluetooth not available") }
+            _uiState.update { it.copy(error = context.getString(R.string.bt_setup_error_bluetooth_unavailable)) }
             return
         }
         _uiState.update { it.copy(scanning = true, scannedDevices = emptyList(), error = null) }
@@ -104,7 +105,7 @@ class SetupViewModel @Inject constructor(
                 }
             }
             override fun onScanFailed(errorCode: Int) {
-                _uiState.update { it.copy(scanning = false, error = "Scan failed (code $errorCode)") }
+                _uiState.update { it.copy(scanning = false, error = context.getString(R.string.bt_setup_error_scan_failed, errorCode)) }
             }
         }
         scanCallback = cb
@@ -131,7 +132,7 @@ class SetupViewModel @Inject constructor(
 
     fun proceedToPasscode() {
         if (_uiState.value.address.isBlank()) {
-            _uiState.update { it.copy(error = "Bitte zuerst ein Gerät auswählen") }
+            _uiState.update { it.copy(error = context.getString(R.string.bt_setup_error_no_device_selected)) }
             return
         }
         _uiState.update { it.copy(step = SetupStep.PASSCODE, error = null) }
@@ -142,7 +143,7 @@ class SetupViewModel @Inject constructor(
         val hex = raw.removePrefix("btdashboard:").replace("-", "").trim().uppercase()
         val value = hex.toLongOrNull(16)?.toInt()
         if (value == null || value == 0) {
-            _uiState.update { it.copy(error = "Ungültiger Passcode: $raw") }
+            _uiState.update { it.copy(error = context.getString(R.string.bt_setup_error_invalid_passcode, raw)) }
             return
         }
         _uiState.update { it.copy(passcodeInput = hex, error = null) }
@@ -156,13 +157,13 @@ class SetupViewModel @Inject constructor(
     private fun startSync(passcode: Int) {
         val address = _uiState.value.address.trim()
         val deviceId = UUID.randomUUID().toString()
-        _uiState.update { it.copy(step = SetupStep.SYNCING, syncing = true, syncStatus = "Verbinde…", error = null) }
+        _uiState.update { it.copy(step = SetupStep.SYNCING, syncing = true, syncStatus = context.getString(R.string.bt_setup_status_connecting), error = null) }
 
         viewModelScope.launch(Dispatchers.IO) {
             val client = HaPacketClient(context)
             try {
                 client.connect(address, passcode, BluetoothTransport.BLE)
-                _uiState.update { it.copy(syncStatus = "Synchronisiere Daten…") }
+                _uiState.update { it.copy(syncStatus = context.getString(R.string.bt_setup_syncing)) }
 
                 val db = AppDatabase.getInstance(context)
                 val result = SyncManager(client, db, deviceId).performInitialSync()
@@ -192,7 +193,7 @@ class SetupViewModel @Inject constructor(
             } catch (e: Exception) {
                 Timber.e(e, "Setup connect/sync failed")
                 _uiState.update {
-                    it.copy(syncing = false, step = SetupStep.PASSCODE, error = e.message ?: "Verbindungsfehler")
+                    it.copy(syncing = false, step = SetupStep.PASSCODE, error = e.message ?: context.getString(R.string.bt_setup_error_connection))
                 }
             } finally {
                 client.disconnect()
