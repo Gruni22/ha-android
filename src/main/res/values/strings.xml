@@ -50,9 +50,6 @@
     <string name="bt_settings_section_reset">Danger zone</string>
     <string name="bt_settings_reset_hint">Removes the active device and clears its local data. Other devices remain unaffected.</string>
     <string name="bt_settings_reset">Remove active device</string>
-    <string name="bt_settings_section_types">HA Type Info</string>
-    <string name="bt_settings_types_loading">Loading from GitHub…</string>
-    <string name="bt_settings_fetch_types">Fetch from GitHub</string>
 
     <!-- Dashboard screen -->
     <string name="bt_dashboard_title">Home Assistant</string>

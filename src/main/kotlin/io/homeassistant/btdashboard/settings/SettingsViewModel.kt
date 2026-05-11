@@ -12,7 +12,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import io.homeassistant.btdashboard.config.BtConfig
 import io.homeassistant.btdashboard.config.DeviceConfig
 import io.homeassistant.btdashboard.db.AppDatabase
-import io.homeassistant.btdashboard.github.HaTypesFetcher
 import io.homeassistant.btdashboard.service.BleConnectionService
 import io.homeassistant.btdashboard.sync.SyncResult
 import java.text.SimpleDateFormat
@@ -32,8 +31,6 @@ data class SettingsUiState(
     val activeDeviceId: String? = null,
     val syncing: Boolean = false,
     val syncStatus: String = "",
-    val fetchingTypes: Boolean = false,
-    val haTypesStatus: String = "",
     val error: String? = null,
     val navigateToSetup: Boolean = false,
 )
@@ -47,7 +44,6 @@ class SettingsViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val btConfig = BtConfig(context)
-    private val typesFetcher = HaTypesFetcher(context)
 
     private val _uiState = MutableStateFlow(buildInitialState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
@@ -78,7 +74,6 @@ class SettingsViewModel @Inject constructor(
     private fun buildInitialState() = SettingsUiState(
         devices = btConfig.devices,
         activeDeviceId = btConfig.activeDeviceId,
-        haTypesStatus = if (typesFetcher.hasCachedData()) "Geladen" else "",
     )
 
     /**
@@ -183,23 +178,6 @@ class SettingsViewModel @Inject constructor(
                 _uiState.update { it.copy(navigateToSetup = true) }
             } else {
                 _uiState.update { it.copy(devices = remaining, activeDeviceId = btConfig.activeDeviceId) }
-            }
-        }
-    }
-
-    fun fetchHaTypes() {
-        if (_uiState.value.fetchingTypes) return
-        _uiState.update { it.copy(fetchingTypes = true, haTypesStatus = "Lade…", error = null) }
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val result = typesFetcher.fetch()
-                _uiState.update {
-                    it.copy(fetchingTypes = false, haTypesStatus = "${result.successCount} Domänen geladen")
-                }
-                Timber.i("Settings: HA types fetched — ${result.successCount} ok, ${result.failedCount} failed")
-            } catch (e: Exception) {
-                Timber.e(e, "Settings: HA types fetch failed")
-                _uiState.update { it.copy(fetchingTypes = false, error = e.message ?: "Fetch fehlgeschlagen") }
             }
         }
     }

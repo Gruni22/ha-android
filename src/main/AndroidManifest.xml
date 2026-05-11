@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Classic BT (API ≤ 30) -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
@@ -13,7 +14,6 @@
         android:name="android.permission.BLUETOOTH_SCAN"
         android:usesPermissionFlags="neverForLocation" />
 
-    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -24,6 +24,21 @@
 
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
     <uses-feature android:name="android.software.companion_device_setup" android:required="false" />
+
+    <!-- Strip permissions that auto-merge from libraries we don't actually need.
+         Keeps the Play Store listing honest and avoids extra Privacy-fragebogen sections. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"
+                     tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"
+                     tools:node="remove" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"
+                     tools:node="remove" />
+    <uses-permission android:name="android.permission.INTERNET"
+                     tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE"
+                     tools:node="remove" />
+    <uses-permission android:name="com.android.vending.CHECK_LICENSE"
+                     tools:node="remove" />
 
     <application
         android:name=".BtDashboardApp"
